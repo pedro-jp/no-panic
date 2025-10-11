@@ -15,7 +15,7 @@ export default function Home() {
 
         <div className={styles.text}>
           <p className={styles.paragrafo}>
-            Aplicativo de terapia online. <br />
+            Plataforma de terapia online. <br />
             Conecte-se com profissionais <br />
             qualificados no conforto da sua casa.
           </p>
