@@ -35,7 +35,7 @@
       justify-content: center;
       gap: 1rem;
 
-      button {
+      a {
         font-size: 10px;
         padding: 0.5rem 1rem;
         border: 1px solid #20466440;

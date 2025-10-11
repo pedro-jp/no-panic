@@ -22,12 +22,8 @@ export default function Home() {
         </div>
 
         <div className={styles.login}>
-          <button>
-            <Link href='/login'>Entrar</Link>
-          </button>
-          <button>
-            <Link href='/cadastro'>Cadastro</Link>
-          </button>
+          <Link href='/entrar'>Entrar</Link>
+          <Link href='/cadastro'>Cadastro</Link>
         </div>
 
         <div className={styles.chamadas}>
