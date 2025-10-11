@@ -14,20 +14,16 @@ export default function Home() {
         </div>
 
         <div className={styles.text}>
-          <p className={styles.paragrafo}>Aplicativo de terapia online.</p>
-          <p className={styles.paragrafo}>Conecte-se com profissionais</p>
           <p className={styles.paragrafo}>
+            Aplicativo de terapia online. <br />
+            Conecte-se com profissionais <br />
             qualificados no conforto da sua casa.
           </p>
         </div>
 
         <div className={styles.login}>
-          <button>
-            <Link href='/login'>Entrar</Link>
-          </button>
-          <button>
-            <Link href='/cadastro'>Cadastro</Link>
-          </button>
+          <Link href='/entrar'>Entrar</Link>
+          <Link href='/cadastro'>Cadastro</Link>
         </div>
 
         <div className={styles.chamadas}>

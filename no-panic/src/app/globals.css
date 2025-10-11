@@ -1,18 +1,54 @@
+:root {
+  --primary-color: #204664;
+
+  /* fonts */
+  --size-xsm: 0.5rem;
+  --size-sm: 0.8rem;
+  --size-md: 1rem;
+  --size-lg: 1.2rem;
+  --font-dark: #204664;
+  --font-90: #20466490;
+  --font-50: #20466450;
+
+  /* border */
+  --border: 1px solid #20466490;
+  --border-radius: 0.5rem;
+
+  /* shadow */
+  --shadow-sm: 1px 1px 2px 0 #20466480;
+  --shadow: 2px 2px 4px 0 #20466480;
+  --shadow-md: 4px 4px 8px 0 #20466480;
+  --shadow-lg: 8px 8px 16px 0 #20466480;
+
+  /* spacing */
+  --spacing-xsm: 0.5rem;
+  --spacing-sm: 0.8rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xlg: 2rem;
+}
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  transition: 0.3s;
+  transition: 0.3s !important;
   font-family: sans-serif;
 
   button,
+  input,
   a {
     all: unset;
     cursor: pointer;
+  }
+
+  input {
+    cursor: default;
   }
 }
 
 body {
   overflow: hidden;
   height: 100dvh;
+  background-color: #e3e8ed;
 }

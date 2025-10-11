@@ -1,0 +1,22 @@
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-sizing: border-box !important;
+
+  font-size: var(--size-xsm);
+  color: var(--font-dark);
+  width: 100% !important;
+
+  input {
+    font-size: var(--size-sm);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-xsm) var(--spacing-md);
+    box-shadow: var(--shadow-sm);
+
+    &:focus {
+      outline: var(--border);
+      box-shadow: var(--shadow-md);
+    }
+  }
+}

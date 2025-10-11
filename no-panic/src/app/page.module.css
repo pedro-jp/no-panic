@@ -1,5 +1,4 @@
 .page {
-  background-color: #e3e8ed;
   height: 100dvh;
   width: 100vw;
   display: grid;
@@ -36,7 +35,7 @@
       justify-content: center;
       gap: 1rem;
 
-      button {
+      a {
         font-size: 10px;
         padding: 0.5rem 1rem;
         border: 1px solid #20466440;
@@ -64,6 +63,7 @@
     .chamadas {
       display: flex;
       gap: 1rem;
+      flex-wrap: wrap;
 
       .chamada {
         display: flex;

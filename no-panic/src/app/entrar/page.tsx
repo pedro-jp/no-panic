@@ -1,18 +1,18 @@
 import React from 'react';
 import styles from './styles.module.css';
 import { Metadata } from 'next';
-import { CadastroForm } from '@/components/cadastro-form';
+import { LoginForm } from '@/components/login-form';
 
 export const metadata: Metadata = {
-  title: 'No Panic | Cadastro',
+  title: 'No Panic | Login',
 };
 
-const Cadastro = () => {
+const Login = () => {
   return (
     <div className={styles.container}>
-      <CadastroForm />
+      <LoginForm />
     </div>
   );
 };
 
-export default Cadastro;
+export default Login;
