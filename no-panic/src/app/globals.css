@@ -3,6 +3,13 @@
   padding: 0;
   box-sizing: border-box;
   transition: 0.3s;
+  font-family: sans-serif;
+
+  button,
+  a {
+    all: unset;
+    cursor: pointer;
+  }
 }
 
 body {
