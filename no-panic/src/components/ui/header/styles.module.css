@@ -1,0 +1,142 @@
+/* HEADER BASE */
+.header {
+  padding-inline: 1rem;
+  background-color: #fff;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+/* MENU SUPERIOR */
+.header menu {
+  max-width: var(--container-max);
+  margin-inline: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-block: var(--spacing-xsm);
+
+  button {
+    font-size: var(--size-sm);
+    font-weight: 600;
+    display: flex;
+    gap: calc(var(--spacing-xsm) / 2);
+    align-items: center;
+    border: var(--border);
+    border-radius: var(--border-radius);
+    padding: var(--padding-sm);
+
+    &:hover {
+      box-shadow: var(--shadow-sm);
+    }
+  }
+}
+
+.burger {
+  display: none;
+  position: relative;
+}
+
+.burger input {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.logo {
+  user-select: none;
+  font-size: var(--size-sm);
+}
+
+.logo,
+.header ul,
+.sos_perfil {
+  display: flex;
+  gap: var(--spacing-xsm);
+  align-items: center;
+  color: var(--primary-color);
+}
+
+.header ul {
+  list-style: none;
+  font-weight: 600;
+  color: var(--font-90);
+  font-size: var(--size-sm);
+}
+
+.sos_perfil img {
+  border-radius: 100%;
+}
+
+/* NAV MOBILE FECHADO/ABERTO */
+.header nav {
+  display: grid;
+  grid-template-rows: 0fr;
+  overflow: hidden;
+  transition: grid-template-rows 0.4s ease, opacity 0.3s ease;
+  opacity: 0;
+}
+
+.header nav ul {
+  overflow: hidden;
+  display: none !important;
+}
+
+/* ABERTO (usando :has com o input checked) */
+.header:has(input:checked) nav {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.header nav ul {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xsm);
+}
+
+/* MOBILE */
+@media (width < 540px) {
+  .header nav ul {
+    display: flex !important;
+  }
+  .burger {
+    display: block !important;
+  }
+
+  .closed {
+    display: block;
+  }
+
+  .open {
+    display: none;
+  }
+
+  .header:has(input:checked) {
+    nav {
+      ul {
+        padding-bottom: 1rem;
+      }
+    }
+  }
+
+  .burger:has(input:checked) .closed {
+    display: none;
+  }
+
+  .burger:has(input:checked) .open {
+    display: block;
+  }
+
+  /* Oculta o menu principal no mobile */
+  .header menu ul {
+    display: none;
+  }
+
+  /* NAV MOBILE */
+
+  .header nav ul li {
+    list-style: none;
+  }
+}

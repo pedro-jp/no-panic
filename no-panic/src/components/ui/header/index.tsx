@@ -1,0 +1,60 @@
+import React from 'react';
+import styles from './styles.module.css';
+import Image from 'next/image';
+import Link from 'next/link';
+import { IoClose, IoHeart, IoMenu } from 'react-icons/io5';
+
+export const Header = () => {
+  return (
+    <header className={styles.header}>
+      <menu>
+        <div className={styles.burger}>
+          <input type='checkbox' name='burger' id='burger' />
+          <IoMenu className={styles.closed} />
+          <IoClose className={styles.open} />
+        </div>
+        <div className={styles.logo}>
+          <Image src='/logo_azul_sf.png' alt='logo' height={30} width={30} />
+          <h4>No Panic</h4>
+        </div>
+        <ul>
+          <li>
+            <Link href='/terapeutas'>Terapeutas</Link>
+          </li>
+          <li>
+            <Link href='#'>Calendário</Link>
+          </li>
+          <li>
+            <Link href='#'>Histórico</Link>
+          </li>
+          <li>
+            <Link href='#'>Chat</Link>
+          </li>
+        </ul>
+        <div className={styles.sos_perfil}>
+          <button className={styles.sos_btn}>
+            <IoHeart color='red' />
+            sos
+          </button>
+          <Image src='/logo.png' alt='Perfil' width={20} height={20} />
+        </div>
+      </menu>
+      <nav>
+        <ul className={styles.ul_mobile}>
+          <li>
+            <Link href='/terapeutas'>Terapeutas</Link>
+          </li>
+          <li>
+            <Link href='#'>Calendário</Link>
+          </li>
+          <li>
+            <Link href='#'>Histórico</Link>
+          </li>
+          <li>
+            <Link href='#'>Chat</Link>
+          </li>
+        </ul>
+      </nav>
+    </header>
+  );
+};
