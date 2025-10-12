@@ -1,0 +1,42 @@
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  height: fit-content;
+
+  width: 100%;
+  .header {
+    h2 {
+      color: var(--primary-color);
+    }
+
+    p {
+      color: var(--font-90);
+      font-size: var(--size-sm);
+    }
+  }
+
+  .search {
+    background-color: #fff;
+    padding: var(--padding-md);
+    border-radius: var(--border-radius);
+    width: 100%;
+    max-width: 250px;
+    margin-left: 1px;
+
+    &:focus {
+      outline: var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    &:active {
+      box-shadow: var(--shadow);
+    }
+  }
+
+  .card_container {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+}

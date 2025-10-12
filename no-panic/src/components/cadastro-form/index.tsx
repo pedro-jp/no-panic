@@ -4,6 +4,7 @@ import styles from './styles.module.css';
 import Image from 'next/image';
 import { Input } from '../ui/input-com-label';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 export const CadastroForm = () => {
   return (
@@ -21,7 +22,13 @@ export const CadastroForm = () => {
         />
         <Input label='Senha' type='password' required placeholder='••••••••' />
 
-        <button>Criar conta</button>
+        <button
+          onClick={() => {
+            redirect('/terapeutas');
+          }}
+        >
+          Criar conta
+        </button>
         <span className={styles.span}>
           Já tem uma conta? <Link href='/entrar'>Entrar</Link>
         </span>
