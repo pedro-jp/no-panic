@@ -22,6 +22,8 @@
 
   /* padding */
   --padding-sm: 2px 8px;
+  --padding-md-2: 4px 8px;
+  --padding-md: 0.5rem;
 
   /* spacing */
   --spacing-xsm: 0.5rem;
