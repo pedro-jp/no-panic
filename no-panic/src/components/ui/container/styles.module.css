@@ -1,6 +1,11 @@
 .container {
-  max-width: 1440px;
-  padding: 2rem 1rem;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-block: 2rem;
   overflow: auto !important;
   height: 100vh;
+
+  @media (width < 768px) {
+    padding-inline: 1rem;
+  }
 }
