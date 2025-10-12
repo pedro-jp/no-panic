@@ -59,4 +59,21 @@
       }
     }
   }
+  button {
+    background-color: var(--primary-color);
+    color: #fff;
+    padding-block: 4px;
+    font-size: 0.6rem;
+    font-weight: bold;
+    border-radius: var(--border-radius);
+    width: 100%;
+
+    &:hover {
+      box-shadow: var(--shadow);
+    }
+
+    &:active {
+      scale: 0.95;
+    }
+  }
 }

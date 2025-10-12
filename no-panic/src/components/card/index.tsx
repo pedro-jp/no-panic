@@ -32,6 +32,7 @@ export const Card = () => {
           <span>120 sessões</span>
         </p>
       </div>
+      <button>Agendar Sessão</button>
     </div>
   );
 };
