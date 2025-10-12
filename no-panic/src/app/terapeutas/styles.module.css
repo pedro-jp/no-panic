@@ -23,6 +23,7 @@
     width: 100%;
     max-width: 250px;
     margin-left: 1px;
+    font-size: var(--size-sm);
 
     &:focus {
       outline: var(--border);
