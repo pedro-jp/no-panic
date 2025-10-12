@@ -4,6 +4,7 @@ import styles from './styles.module.css';
 import Image from 'next/image';
 import { Input } from '../ui/input-com-label';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 export const LoginForm = () => {
   return (
@@ -22,7 +23,13 @@ export const LoginForm = () => {
         <span className={`${styles.span} ${styles.forget}`}>
           <Link href='#'>Esqueceu a senha?</Link>
         </span>
-        <button>Entrar</button>
+        <button
+          onClick={() => {
+            redirect('/terapeutas');
+          }}
+        >
+          Entrar
+        </button>
         <span className={styles.span}>
           Não tem uma conta? <Link href='/cadastro'>Cadastre-se</Link>
         </span>
