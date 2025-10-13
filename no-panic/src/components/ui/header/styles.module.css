@@ -1,6 +1,5 @@
 /* HEADER BASE */
 .header {
-  padding-inline: 1rem;
   background-color: #fff;
   box-shadow: var(--shadow-sm);
   overflow: hidden;
@@ -9,6 +8,7 @@
 /* MENU SUPERIOR */
 .header menu {
   max-width: var(--container-max);
+  padding-inline: 1rem;
   margin-inline: auto;
   display: flex;
   justify-content: space-between;

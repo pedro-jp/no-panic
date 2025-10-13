@@ -22,7 +22,12 @@ export const Header = () => {
             <Link href='/terapeutas'>Terapeutas</Link>
           </li>
           <li>
-            <Link href='#'>Calendário</Link>
+            <Link
+              href='/calendario
+            '
+            >
+              Calendário
+            </Link>
           </li>
           <li>
             <Link href='#'>Histórico</Link>
@@ -45,7 +50,7 @@ export const Header = () => {
             <Link href='/terapeutas'>Terapeutas</Link>
           </li>
           <li>
-            <Link href='#'>Calendário</Link>
+            <Link href='/calendario'>Calendário</Link>
           </li>
           <li>
             <Link href='#'>Histórico</Link>

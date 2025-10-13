@@ -1,0 +1,8 @@
+.calendario {
+  background-color: #fff;
+  height: 500px;
+  border: var(--border);
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+}

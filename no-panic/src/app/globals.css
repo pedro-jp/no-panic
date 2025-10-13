@@ -33,7 +33,7 @@
   --spacing-xlg: 2rem;
 
   /* widths */
-  --container-max: 768px;
+  --container-max: calc(768px - 2rem);
 }
 
 * {

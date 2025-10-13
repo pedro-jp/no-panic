@@ -2,10 +2,7 @@
   max-width: var(--container-max);
   margin-inline: auto;
   padding-block: 2rem;
-  overflow: auto !important;
+  padding-inline: 1rem;
+  /* overflow: auto !important; */
   height: 100vh;
-
-  @media (width < 768px) {
-    padding-inline: 1rem;
-  }
 }

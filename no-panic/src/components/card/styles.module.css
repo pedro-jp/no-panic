@@ -21,7 +21,7 @@
   .info {
     color: var(--primary-color);
 
-    &:last-child {
+    &:nth-child(3) {
       align-self: baseline;
       width: 100%;
     }
