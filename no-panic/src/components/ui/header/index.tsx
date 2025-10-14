@@ -13,10 +13,10 @@ export const Header = () => {
           <IoMenu className={styles.closed} />
           <IoClose className={styles.open} />
         </div>
-        <div className={styles.logo}>
+        <Link href='/' className={styles.logo}>
           <Image src='/logo_azul_sf.png' alt='logo' height={30} width={30} />
           <h4>No Panic</h4>
-        </div>
+        </Link>
         <ul>
           <li>
             <Link href='/terapeutas'>Terapeutas</Link>

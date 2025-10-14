@@ -1,113 +1,108 @@
+from flask import Flask, request, jsonify,render_template
+from flask_cors import CORS
 import mysql.connector
 import bcrypt
+from dotenv import load_dotenv
+import os
+
+# Carrega o .env
+load_dotenv()
+
+DB_HOST = os.getenv("DB_HOST")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_NAME = os.getenv("DB_NAME")
+DB_PORT = os.getenv("DB_PORT")
+
+
+app = Flask(__name__)
+CORS(app)
 
 # ======== CONEXÃO ==========
-conexao = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="toor",
-    database="no_panic"
-)
-cursor = conexao.cursor()
+def get_connection():
+    return mysql.connector.connect(
+        host=DB_HOST,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME,
+        port=DB_PORT
+    )
 
-# ======== FUNÇÃO PARA CADASTRAR ==========
-def cadastrar_usuario():
-    print("\n=== CADASTRO DE USUÁRIO ===")
-    nome = input("Nome completo: ")
-    cpf = input("CPF (somente números): ")
-    email = input("E-mail: ")
-    senha = input("Senha: ")
+@app.route('/', methods=['GET'])
+def home():
+    return  render_template("index.html")
 
-    # Escolher tipo de usuário
-    while True:
-        tipo = input("Você é [1] Paciente ou [2] Terapeuta? ")
-        if tipo in ["1", "2"]:
-            break
-        else:
-            print("Opção inválida, tente novamente.")
+# ======== ROTA: CADASTRO ==========
+@app.route('/cadastro', methods=['POST'])
+def cadastro():
+    data = request.json
+    nome = data.get("nome")
+    cpf = data.get("cpf")
+    email = data.get("email")
+    senha = data.get("senha")
 
-    # Criptografa a senha
+    if not all([nome, cpf, email, senha]):
+        return jsonify({"erro": "Campos obrigatórios faltando"}), 400
+
     senha_hash = bcrypt.hashpw(senha.encode('utf-8'), bcrypt.gensalt())
 
-    # Insere na tabela usuario
-    comando_usuario = "INSERT INTO usuario (nome, cpf, email, senha) VALUES (%s, %s, %s, %s)"
-    valores_usuario = (nome, cpf, email, senha_hash.decode('utf-8'))
+    conexao = get_connection()
+    cursor = conexao.cursor()
 
     try:
-        cursor.execute(comando_usuario, valores_usuario)
+        # Inserir na tabela usuario
+        cursor.execute(
+            "INSERT INTO usuario (nome, cpf, email, senha) VALUES (%s, %s, %s, %s)",
+            (nome, cpf, email, senha_hash.decode('utf-8'))
+        )
         conexao.commit()
-        id_usuario = cursor.lastrowid  # pega o ID gerado automaticamente
+        id_usuario = cursor.lastrowid
 
-        # Cadastra conforme o tipo
-        if tipo == "1":  # Paciente
-            data_nasc = input("Data de nascimento (AAAA-MM-DD): ")
-            historico = input("Histórico de saúde (opcional): ")
-            comando_paciente = "INSERT INTO paciente (id_usuario, data_nascimento, historico_saude) VALUES (%s, %s, %s)"
-            cursor.execute(comando_paciente, (id_usuario, data_nasc, historico))
-            conexao.commit()
-            print("✅ Paciente cadastrado com sucesso!")
+        conexao.commit()
+        return jsonify({"mensagem": "Usuário cadastrado com sucesso!"}), 201
 
-        else:  # Terapeuta
-            especialidade = input("Especialidade: ")
-            crp = input("CRP: ")
-            disponibilidade = input("Disponibilidade (ex: seg-sex 8h-18h): ")
-            comando_terapeuta = "INSERT INTO terapeuta (id_usuario, especialidade, CRP, disponibilidade) VALUES (%s, %s, %s, %s)"
-            cursor.execute(comando_terapeuta, (id_usuario, especialidade, crp, disponibilidade))
-            conexao.commit()
-            print("✅ Terapeuta cadastrado com sucesso!")
-
-    except mysql.connector.Error as erro:
-        print(f"❌ Erro ao cadastrar: {erro}")
+    except mysql.connector.Error as e:
         conexao.rollback()
+        return jsonify({"erro": str(e)}), 500
+    finally:
+        cursor.close()
+        conexao.close()
 
+# ======== ROTA: LOGIN ==========
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json(force=True)  # força JSON mesmo se Content-Type estiver errado
+    if not data:
+        return jsonify({"erro": "JSON inválido"}), 400
 
-# ======== FUNÇÃO DE LOGIN ==========
-def fazer_login():
-    print("\n=== LOGIN ===")
-    email = input("E-mail: ")
-    senha = input("Senha: ")
+    email = data.get("email")
+    senha = data.get("senha")
+    if not email or not senha:
+        return jsonify({"erro": "Informe email e senha"}), 400
 
-    comando = "SELECT id_usuario, senha FROM usuario WHERE email = %s"
-    cursor.execute(comando, (email,))
-    resultado = cursor.fetchone()
+    conexao = get_connection()
+    cursor = conexao.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT * FROM usuario WHERE email = %s", (email,))
+        usuario = cursor.fetchone()
+        if not usuario:
+            return jsonify({"erro": "Usuário não encontrado"}), 404
 
-    if resultado:
-        id_usuario, senha_bd = resultado
-        if bcrypt.checkpw(senha.encode('utf-8'), senha_bd.encode('utf-8')):
-
-            # Verifica se é paciente ou terapeuta
-            cursor.execute("SELECT id_usuario FROM paciente WHERE id_usuario = %s", (id_usuario,))
-            if cursor.fetchone():
-                tipo = "paciente"
-            else:
-                cursor.execute("SELECT id_usuario FROM terapeuta WHERE id_usuario = %s", (id_usuario,))
-                tipo = "terapeuta" if cursor.fetchone() else "usuário comum"
-
-            print(f"✅ Login bem-sucedido! Bem-vindo, {tipo}.")
+        if bcrypt.checkpw(senha.encode('utf-8'), usuario["senha"].encode('utf-8')):
+            newUsuario = {
+                "nome": usuario["nome"],
+                "email": usuario["email"],
+                "cpf": usuario["cpf"]
+            }
+            return jsonify({"usuario": newUsuario}), 200
         else:
-            print("❌ Senha incorreta.")
-    else:
-        print("❌ Usuário não encontrado.")
+            return jsonify({"erro": "Senha incorreta"}), 401
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+    finally:
+        cursor.close()
+        conexao.close()
 
-
-# ======== MENU PRINCIPAL ==========
-while True:
-    print("\n--- MENU ---")
-    print("1 - Cadastrar novo usuário")
-    print("2 - Fazer login")
-    print("3 - Sair")
-
-    opcao = input("Escolha uma opção: ")
-
-    if opcao == "1":
-        cadastrar_usuario()
-    elif opcao == "2":
-        fazer_login()
-    elif opcao == "3":
-        print("Encerrando o sistema...")
-        break
-    else:
-        print("Opção inválida, tente novamente.")
-
-cursor.close()
-conexao.close()
+# ======== EXECUTAR API ==========
+if __name__ == "__main__":
+    app.run(debug=True)

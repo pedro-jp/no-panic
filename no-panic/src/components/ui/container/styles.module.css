@@ -3,6 +3,10 @@
   margin-inline: auto;
   padding-block: 2rem;
   padding-inline: 1rem;
-  /* overflow: auto !important; */
-  height: 100vh;
+  overflow: auto !important;
+  height: 100dvh;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
