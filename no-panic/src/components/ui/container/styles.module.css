@@ -2,10 +2,11 @@
   max-width: var(--container-max);
   margin-inline: auto;
   padding-block: 2rem;
+  padding-inline: 1rem;
   overflow: auto !important;
-  height: 100vh;
+  height: 100dvh;
 
-  @media (width < 768px) {
-    padding-inline: 1rem;
+  &::-webkit-scrollbar {
+    display: none;
   }
 }
