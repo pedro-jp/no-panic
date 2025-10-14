@@ -32,25 +32,6 @@
     }
   }
 
-  button {
-    background-color: var(--primary-color);
-    color: #fff;
-    width: 100%;
-    padding-block: var(--spacing-xsm);
-    border-radius: var(--border-radius);
-    display: grid;
-    place-content: center;
-    font-size: var(--size-sm);
-
-    &:hover {
-      opacity: 0.9;
-    }
-
-    &:active {
-      scale: 0.995;
-    }
-  }
-
   .span.forget {
     width: 100%;
     text-align: end;

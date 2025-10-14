@@ -1,16 +1,16 @@
+'use client';
 import React from 'react';
 import styles from './styles.module.css';
-import { Metadata } from 'next';
 import { CadastroForm } from '@/components/cadastro-form';
-
-export const metadata: Metadata = {
-  title: 'No Panic | Cadastro',
-};
+import { Provider } from '@/components/provider/auth-provider';
 
 const Cadastro = () => {
   return (
     <div className={styles.container}>
-      <CadastroForm />
+      <title>Cadastro | NoPanic</title>
+      <Provider>
+        <CadastroForm />
+      </Provider>
     </div>
   );
 };

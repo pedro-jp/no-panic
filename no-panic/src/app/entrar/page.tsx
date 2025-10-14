@@ -1,16 +1,16 @@
+'use client';
+
 import React from 'react';
 import styles from './styles.module.css';
-import { Metadata } from 'next';
 import { LoginForm } from '@/components/login-form';
-
-export const metadata: Metadata = {
-  title: 'No Panic | Login',
-};
+import { Provider } from '@/components/provider/auth-provider';
 
 const Login = () => {
   return (
     <div className={styles.container}>
-      <LoginForm />
+      <Provider>
+        <LoginForm />
+      </Provider>
     </div>
   );
 };
