@@ -4,13 +4,16 @@ import styles from './styles.module.css';
 import Image from 'next/image';
 import { Input } from '../ui/input-com-label';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
+import { Button } from '../ui/button';
+import { useAuth } from '@/context/auth-context';
 
 export const CadastroForm = () => {
   const [cpf, setCpf] = useState(''); // armazenará apenas os dígitos
   const [nome, setNome] = useState<string | null>();
   const [senha, setSenha] = useState<string | null>();
   const [email, setEmail] = useState<string | null>();
+
+  const { isLoading, sign } = useAuth();
 
   // Função para formatar CPF como 000.000.000-00
   const formatCPF = (digits: string) => {
@@ -31,38 +34,14 @@ export const CadastroForm = () => {
     setCpf(raw);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     if (!nome || !cpf || !email || !senha) return;
-
-    const data = {
-      nome,
-      cpf,
-      email,
-      senha,
-    };
-
-    try {
-      const response = await fetch('http://127.0.0.1:5000/cadastro', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const err = await response.text();
-        throw new Error(err || 'Erro ao cadastrar');
-      }
-
-      redirect('/terapeutas');
-    } catch (err) {
-      console.error(err);
-    }
+    sign(nome, cpf, email, senha);
   };
 
   return (
-    <main className={styles.main}>
+    <form className={styles.main} onSubmit={handleSubmit}>
       <div className={styles.intro}>
         <Image src='/logo_azul_sf.png' alt='Logo' height={50} width={50} />
         <h2>Faça seu Cadastro</h2>
@@ -80,6 +59,8 @@ export const CadastroForm = () => {
           label='CPF'
           type='text'
           required
+          maxLength={14}
+          minLength={14}
           placeholder='123.456.789-00'
           value={formatCPF(cpf)}
           onChange={handleCPFChange}
@@ -97,22 +78,21 @@ export const CadastroForm = () => {
           value={senha!}
           onChange={(e) => setSenha(e.target.value)}
           label='Senha'
+          minLength={6}
+          maxLength={16}
           type='password'
           required
           placeholder='••••••••'
         />
 
-        <button
-          onClick={() => {
-            handleSubmit();
-          }}
-        >
+        <Button type='submit' disabled={isLoading}>
           Criar conta
-        </button>
+        </Button>
+
         <span className={styles.span}>
           Já tem uma conta? <Link href='/entrar'>Entrar</Link>
         </span>
       </div>
-    </main>
+    </form>
   );
 };
