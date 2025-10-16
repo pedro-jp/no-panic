@@ -129,7 +129,7 @@ export default function VideoCall() {
       if (track.kind === 'video') {
         const parameters = sender.getParameters();
         if (!parameters.encodings) parameters.encodings = [{}];
-        parameters.encodings[0].maxBitrate = 5_000; // 500 kbps
+        parameters.encodings[0].maxBitrate = 10_000_000; // 500 kbps
         sender.setParameters(parameters).catch(console.error);
       }
     });
@@ -178,8 +178,8 @@ export default function VideoCall() {
         if (report.type === 'outbound-rtp' && report.kind === 'video') {
           if (lastBytesSent) {
             const bytesDiff = report.bytesSent - lastBytesSent;
-            const kbps = (bytesDiff * 8) / 5000000;
-            setBitrate(kbps);
+            const mbps = (bytesDiff * 8) / 1_000_000;
+            setBitrate(mbps);
           }
           lastBytesSent = report.bytesSent;
         }
@@ -261,7 +261,7 @@ export default function VideoCall() {
           </>
         )}
       </div>
-      <div className={styles.bitrate}>Bitrate atual: {bitrate} kbps</div>
+      <div className={styles.bitrate}>Bitrate atual: {bitrate} mbps</div>
     </div>
   );
 }
