@@ -11,7 +11,7 @@ import {
   BiVideo,
   BiVideoOff,
 } from 'react-icons/bi';
-import { FiPhoneMissed } from 'react-icons/fi';
+import { FiPhone, FiPhoneMissed } from 'react-icons/fi';
 
 const SIGNALING_SERVER = process.env.NEXT_PUBLIC_CALL_SERVER_URL;
 const ROOM_ID = 'teste-sala';
@@ -233,7 +233,11 @@ export default function VideoCall() {
         </div>
       </div>
       <div className={styles.buttons}>
-        {!onCall && <button onClick={startCall}>Iniciar Chamada</button>}
+        {!onCall && (
+          <button onClick={startCall}>
+            <FiPhone color='#fff' className={styles.start} />
+          </button>
+        )}
 
         {onCall && (
           <>

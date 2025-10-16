@@ -108,6 +108,11 @@ body:has(.container) {
     display: grid;
     place-content: center;
   }
+
+  button:has(.start) {
+    background-color: green;
+  }
+
   button:has(.on) {
     background-color: #98b1c3;
   }
