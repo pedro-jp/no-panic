@@ -12,6 +12,7 @@ import {
   BiVideoOff,
 } from 'react-icons/bi';
 import { FiPhone, FiPhoneMissed } from 'react-icons/fi';
+import { TbCameraRotate } from 'react-icons/tb';
 
 const SIGNALING_SERVER = process.env.NEXT_PUBLIC_CALL_SERVER_URL;
 const ROOM_ID = 'teste-sala';
@@ -30,7 +31,7 @@ export default function VideoCall() {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [onCall, setOnCall] = useState(false);
   const [bitrate, setBitrate] = useState(0);
-
+  const [isFrontCamera, setIsFrontCamera] = useState(true);
   const [micEnabled, setMicEnabled] = useState(true);
   const [videoEnabled, setVideoEnabled] = useState(true);
 
@@ -187,6 +188,47 @@ export default function VideoCall() {
     }, 1000);
   };
 
+  const switchCamera = async () => {
+    if (!localStream) return;
+
+    try {
+      // Alterna entre frontal e traseira
+      const newFacingMode = isFrontCamera ? 'environment' : 'user';
+      const videoTrack = localStream.getVideoTracks()[0];
+
+      // Pega novo stream com a outra câmera
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: newFacingMode },
+        audio: true, // mantém o áudio
+      });
+
+      const newVideoTrack = newStream.getVideoTracks()[0];
+
+      // Substitui a track no peer connection (sem reiniciar a call)
+      const sender = pcRef.current
+        ?.getSenders()
+        .find((s) => s.track?.kind === 'video');
+
+      if (sender) {
+        sender.replaceTrack(newVideoTrack);
+      }
+
+      // Atualiza a câmera local
+      localStream.removeTrack(videoTrack);
+      videoTrack.stop();
+      localStream.addTrack(newVideoTrack);
+
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = newStream;
+      }
+
+      setLocalStream(newStream);
+      setIsFrontCamera(!isFrontCamera);
+    } catch (err) {
+      console.error('Erro ao trocar câmera:', err);
+    }
+  };
+
   const toggleMic = () => {
     if (!localStream) return;
     localStream.getAudioTracks().forEach((track) => {
@@ -202,6 +244,27 @@ export default function VideoCall() {
     });
     setVideoEnabled((prev) => !prev);
   };
+
+  const useIsDesktop = () => {
+    const [isDesktop, setIsDesktop] = useState(false);
+
+    useEffect(() => {
+      const checkDevice = () => {
+        const isDesktopDevice =
+          window.innerWidth > 768 && !/Mobi|Android/i.test(navigator.userAgent);
+        setIsDesktop(isDesktopDevice);
+      };
+
+      checkDevice();
+      window.addEventListener('resize', checkDevice);
+
+      return () => window.removeEventListener('resize', checkDevice);
+    }, []);
+
+    return !isDesktop;
+  };
+
+  const isDesktop = useIsDesktop();
 
   return (
     <div className={styles.container}>
@@ -255,6 +318,11 @@ export default function VideoCall() {
                 <BiVideoOff color='#fff' className={styles.off} />
               )}
             </button>
+            {!isDesktop && (
+              <button onClick={switchCamera}>
+                <TbCameraRotate className={styles.on} />
+              </button>
+            )}
             <button onClick={stopCall}>
               <FiPhoneMissed color='#fff' className={styles.off} />
             </button>
