@@ -130,7 +130,7 @@ export default function VideoCall() {
       if (track.kind === 'video') {
         const parameters = sender.getParameters();
         if (!parameters.encodings) parameters.encodings = [{}];
-        parameters.encodings[0].maxBitrate = 10_000_000; // 500 kbps
+        parameters.encodings[0].maxBitrate = 1_000; // 500 kbps
         sender.setParameters(parameters).catch(console.error);
       }
     });
@@ -245,27 +245,6 @@ export default function VideoCall() {
     setVideoEnabled((prev) => !prev);
   };
 
-  const useIsDesktop = () => {
-    const [isDesktop, setIsDesktop] = useState(false);
-
-    useEffect(() => {
-      const checkDevice = () => {
-        const isDesktopDevice =
-          window.innerWidth > 768 && !/Mobi|Android/i.test(navigator.userAgent);
-        setIsDesktop(isDesktopDevice);
-      };
-
-      checkDevice();
-      window.addEventListener('resize', checkDevice);
-
-      return () => window.removeEventListener('resize', checkDevice);
-    }, []);
-
-    return !isDesktop;
-  };
-
-  const isDesktop = useIsDesktop();
-
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -318,11 +297,9 @@ export default function VideoCall() {
                 <BiVideoOff color='#fff' className={styles.off} />
               )}
             </button>
-
             <button onClick={switchCamera}>
               <TbCameraRotate className={styles.on} />
             </button>
-
             <button onClick={stopCall}>
               <FiPhoneMissed color='#fff' className={styles.off} />
             </button>
