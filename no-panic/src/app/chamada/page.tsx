@@ -117,7 +117,7 @@ export default function VideoCall() {
       if (track.kind === 'video') {
         const parameters = sender.getParameters();
         if (!parameters.encodings) parameters.encodings = [{}];
-        parameters.encodings[0].maxBitrate = 12_000; // 500 kbps
+        parameters.encodings[0].maxBitrate = 5_000; // 500 kbps
         sender.setParameters(parameters).catch(console.error);
       }
     });
@@ -177,8 +177,14 @@ export default function VideoCall() {
 
   return (
     <div className={styles.container}>
-      <video ref={localVideoRef} autoPlay muted className={styles.local} />
-      <video ref={remoteVideoRef} autoPlay className={styles.remote} />
+      <div className={styles.videos}>
+        <div className={styles.video}>
+          <video ref={localVideoRef} autoPlay muted className={styles.local} />
+        </div>
+        <div className={styles.video}>
+          <video ref={remoteVideoRef} autoPlay className={styles.remote} />
+        </div>
+      </div>
       <div className={styles.buttons}>
         {!onCall && <button onClick={startCall}>Iniciar Chamada</button>}
         {onCall && <button onClick={stopCall}>Encerrar Chamada</button>}
