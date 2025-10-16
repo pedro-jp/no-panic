@@ -111,7 +111,16 @@ export default function VideoCall() {
     });
     pcRef.current = pc;
 
-    localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
+    localStream.getTracks().forEach((track) => {
+      const sender = pc.addTrack(track, localStream);
+
+      if (track.kind === 'video') {
+        const parameters = sender.getParameters();
+        if (!parameters.encodings) parameters.encodings = [{}];
+        parameters.encodings[0].maxBitrate = 12_000; // 500 kbps
+        sender.setParameters(parameters).catch(console.error);
+      }
+    });
 
     pc.onicecandidate = (event) => {
       if (event.candidate) {
