@@ -3,6 +3,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import styles from './styles.module.css';
+import Image from 'next/image';
+import { FaClock } from 'react-icons/fa6';
+import {
+  BiMicrophone,
+  BiMicrophoneOff,
+  BiVideo,
+  BiVideoOff,
+} from 'react-icons/bi';
+import { FiPhoneMissed } from 'react-icons/fi';
 
 const SIGNALING_SERVER = process.env.NEXT_PUBLIC_CALL_SERVER_URL;
 const ROOM_ID = 'teste-sala';
@@ -21,6 +30,9 @@ export default function VideoCall() {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [onCall, setOnCall] = useState(false);
   const [bitrate, setBitrate] = useState(0);
+
+  const [micEnabled, setMicEnabled] = useState(true);
+  const [videoEnabled, setVideoEnabled] = useState(true);
 
   useEffect(() => {
     socketRef.current = io(SIGNALING_SERVER);
@@ -175,8 +187,43 @@ export default function VideoCall() {
     }, 1000);
   };
 
+  const toggleMic = () => {
+    if (!localStream) return;
+    localStream.getAudioTracks().forEach((track) => {
+      track.enabled = !track.enabled;
+    });
+    setMicEnabled((prev) => !prev);
+  };
+
+  const toggleVideo = () => {
+    if (!localStream) return;
+    localStream.getVideoTracks().forEach((track) => {
+      track.enabled = !track.enabled;
+    });
+    setVideoEnabled((prev) => !prev);
+  };
+
   return (
     <div className={styles.container}>
+      <div className={styles.header}>
+        <div className={styles.profissional}>
+          <Image
+            src='/profile.jpg'
+            alt='Imagem do profissional'
+            height={35}
+            width={35}
+          />
+          <div>
+            <h5>Dra. Ana Silva</h5>
+            <span>Sessão em andamento</span>
+          </div>
+        </div>
+        <div className={styles.timer}>
+          {' '}
+          <FaClock color='#00c951' />
+          45:32
+        </div>
+      </div>
       <div className={styles.videos}>
         <div className={styles.video}>
           <video ref={localVideoRef} autoPlay muted className={styles.local} />
@@ -187,7 +234,28 @@ export default function VideoCall() {
       </div>
       <div className={styles.buttons}>
         {!onCall && <button onClick={startCall}>Iniciar Chamada</button>}
-        {onCall && <button onClick={stopCall}>Encerrar Chamada</button>}
+
+        {onCall && (
+          <>
+            <button onClick={toggleMic}>
+              {micEnabled ? (
+                <BiMicrophone color='#000' className={styles.on} />
+              ) : (
+                <BiMicrophoneOff color='#fff' className={styles.off} />
+              )}
+            </button>
+            <button onClick={toggleVideo}>
+              {videoEnabled ? (
+                <BiVideo color='#000' className={styles.on} />
+              ) : (
+                <BiVideoOff color='#fff' className={styles.off} />
+              )}
+            </button>
+            <button onClick={stopCall}>
+              <FiPhoneMissed color='#fff' className={styles.off} />
+            </button>
+          </>
+        )}
       </div>
       <div className={styles.bitrate}>Bitrate atual: {bitrate} kbps</div>
     </div>
