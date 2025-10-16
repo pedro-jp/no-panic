@@ -318,11 +318,11 @@ export default function VideoCall() {
                 <BiVideoOff color='#fff' className={styles.off} />
               )}
             </button>
-            {!isDesktop && (
-              <button onClick={switchCamera}>
-                <TbCameraRotate className={styles.on} />
-              </button>
-            )}
+
+            <button onClick={switchCamera}>
+              <TbCameraRotate className={styles.on} />
+            </button>
+
             <button onClick={stopCall}>
               <FiPhoneMissed color='#fff' className={styles.off} />
             </button>
