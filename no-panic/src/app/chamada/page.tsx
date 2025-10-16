@@ -77,9 +77,29 @@ export default function VideoCall() {
     if (!localStream) await startLocalStream();
     if (!localStream) return;
 
-    const iceServers = process.env.NEXT_PUBLIC_ICE_SERVERS
-      ? JSON.parse(process.env.NEXT_PUBLIC_ICE_SERVERS)
-      : [];
+    const iceServers = [
+      { urls: 'stun:stun.relay.metered.ca:80' },
+      {
+        urls: 'turn:standard.relay.metered.ca:80',
+        username: '8f54eab8cdd34d0912e9862d',
+        credential: 'vYUPRukVEEQj9kF0',
+      },
+      {
+        urls: 'turn:standard.relay.metered.ca:80?transport=tcp',
+        username: '8f54eab8cdd34d0912e9862d',
+        credential: 'vYUPRukVEEQj9kF0',
+      },
+      {
+        urls: 'turn:standard.relay.metered.ca:443',
+        username: '8f54eab8cdd34d0912e9862d',
+        credential: 'vYUPRukVEEQj9kF0',
+      },
+      {
+        urls: 'turns:standard.relay.metered.ca:443?transport=tcp',
+        username: '8f54eab8cdd34d0912e9862d',
+        credential: 'vYUPRukVEEQj9kF0',
+      },
+    ];
 
     console.log(iceServers);
 
