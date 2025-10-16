@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import styles from './styles.module.css';
 
-const SIGNALING_SERVER = 'https://call-test-9269.onrender.com';
+const SIGNALING_SERVER = 'https://no-panic.onrender.com';
 const ROOM_ID = 'teste-sala';
 
 interface SignalData {
