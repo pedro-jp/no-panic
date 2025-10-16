@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import styles from './styles.module.css';
 
-const SIGNALING_SERVER = 'https://call-test-9269.onrender.com';
+const SIGNALING_SERVER = process.env.NEXT_PUBLIC_CALL_SERVER_URL;
 const ROOM_ID = 'teste-sala';
 
 interface SignalData {
@@ -77,8 +77,14 @@ export default function VideoCall() {
     if (!localStream) await startLocalStream();
     if (!localStream) return;
 
+    const iceServers = process.env.NEXT_PUBLIC_ICE_SERVERS
+      ? JSON.parse(process.env.NEXT_PUBLIC_ICE_SERVERS)
+      : [];
+
+    console.log(iceServers);
+
     const pc = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, ...iceServers],
     });
     pcRef.current = pc;
 

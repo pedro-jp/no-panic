@@ -21,6 +21,8 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+const SERVER = process.env.NEXT_PUBLIC_SERVER_URL;
+
 // ===== Contexto =====
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
@@ -59,7 +61,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     console.log(data);
 
     try {
-      const response = await fetch('https://no-panic.onrender.com/cadastro', {
+      const response = await fetch(`${SERVER}/cadastro`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -88,7 +90,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     try {
-      const response = await fetch('https://no-panic.onrender.com/login', {
+      const response = await fetch(`${SERVER}/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
