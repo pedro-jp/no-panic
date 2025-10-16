@@ -178,7 +178,7 @@ export default function VideoCall() {
         if (report.type === 'outbound-rtp' && report.kind === 'video') {
           if (lastBytesSent) {
             const bytesDiff = report.bytesSent - lastBytesSent;
-            const kbps = (bytesDiff * 8) / 5_000_000;
+            const kbps = (bytesDiff * 8) / 5000000;
             setBitrate(kbps);
           }
           lastBytesSent = report.bytesSent;
