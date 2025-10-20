@@ -60,7 +60,7 @@ export default async function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         {user?.primeiro_login === 1 ? (
           <h1>
-            <PrimeiroLoginForm />
+            {/* <PrimeiroLoginForm /> */}
           </h1>
         ) : (
           ''
