@@ -108,18 +108,25 @@ def login():
 
 @app.route('/load-user', methods=['POST'])
 def loadUser():
-    data = request.get_json(force=True)  # força JSON mesmo se Content-Type estiver errado
+    data = request.get_json(force=True)
     if not data:
         return jsonify({"erro": "JSON inválido"}), 400
 
     email = data.get("email")
-    if not email :
+    if not email:
         return jsonify({"erro": "Informe email"}), 400
 
     conexao = get_connection()
     cursor = conexao.cursor(dictionary=True)
     try:
-        cursor.execute("SELECT * FROM usuario WHERE email = %s", (email,))
+        query = """
+            SELECT u.id_usuario, u.nome, u.email, u.cpf, u.primeiro_login,
+                   t.especialidade, t.CRP, t.disponibilidade
+            FROM usuario u
+            LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario
+            WHERE u.email = %s
+        """
+        cursor.execute(query, (email,))
         usuario = cursor.fetchone()
         if not usuario:
             return jsonify({"erro": "Usuário não encontrado"}), 404
@@ -129,14 +136,26 @@ def loadUser():
             "nome": usuario["nome"],
             "email": usuario["email"],
             "cpf": usuario["cpf"],
-            "primeiro_login": usuario["primeiro_login"]
+            "primeiro_login": usuario["primeiro_login"],
+            "terapeuta": None
         }
+
+        # Se ele for terapeuta, adiciona os dados
+        if usuario["CRP"]:
+            newUsuario["terapeuta"] = {
+                "CRP": usuario["CRP"],
+                "especialidade": usuario["especialidade"],
+                "disponibilidade": usuario["disponibilidade"]
+            }
+
         return jsonify({"usuario": newUsuario}), 200
+
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
     finally:
         cursor.close()
         conexao.close()
+
 
 @app.route('/primeiro-login', methods=['POST'])
 def primeiroLogin():
@@ -164,39 +183,25 @@ def primeiroLogin():
     finally:
         cursor.close()
         conexao.close()
-# ======== EXECUTAR API ==========
-if __name__ == "__main__":
-    app.run(debug=True)
 
 #=========TESTE TERAPEUTA=========
 
-@app.route('/cadastro_terapeuta', methods=['POST'])
+@app.route('/cadastro-terapeuta', methods=['POST'])
 def cadastro_terapeuta():
     data = request.json
-    nome = data.get("nome")
-    cpf = data.get("cpf")
-    email = data.get("email")
-    senha = data.get("senha")
+    id_usuario = data.get("id")
     especialidade = data.get("especialidade")
     crp = data.get("crp")
     disponibilidade = data.get("disponibilidade")
 
-    if not all([nome, cpf, email, senha, especialidade, crp, disponibilidade]):
+    if not all([id_usuario,especialidade, crp, disponibilidade]):
         return jsonify({"erro": "Campos obrigatórios faltando"}), 400
 
-    senha_hash = bcrypt.hashpw(senha.encode('utf-8'), bcrypt.gensalt())
 
     conexao = get_connection()
     cursor = conexao.cursor()
 
     try:
-        # Inserir na tabela usuario - testando na tabela de usuario...
-        cursor.execute(
-            "INSERT INTO usuario (nome, cpf, email, senha) VALUES (%s, %s, %s, %s)",
-            (nome, cpf, email, senha_hash.decode('utf-8'))
-        )
-        conexao.commit()
-        id_usuario = cursor.lastrowid
 
         # Inserir na tabela terapeuta - testando na tabela terapeuta...
         cursor.execute(
@@ -215,73 +220,6 @@ def cadastro_terapeuta():
         cursor.close()
         conexao.close()
 
-#=========TESTE TERAPEUTA(Agora parte de Login...)=========
-
-@app.route('/login', methods=['POST'])
-def login():
-    data = request.get_json(force=True)
-
-    email = data.get("email")
-    senha = data.get("senha")
-
-    if not email or not senha:
-        return jsonify({"erro": "Informe email e senha"}), 400
-
-    conexao = get_connection()
-    cursor = conexao.cursor(dictionary=True)
-
-    try:
-        #Aqui o código busca o usuário pelo email
-        cursor.execute("SELECT * FROM usuario WHERE email = %s", (email,))
-        usuario = cursor.fetchone()
-
-        if not usuario:
-            return jsonify({"erro": "Usuário não encontrado"}), 404
-
-        #Verifica a senha
-        if not bcrypt.checkpw(senha.encode('utf-8'), usuario["senha"].encode('utf-8')):
-            return jsonify({"erro": "Senha incorreta"}), 401
-
-        id_usuario = usuario["id_usuario"]
-
-        #Verifica se aqui é terapeuta
-        cursor.execute("SELECT * FROM terapeuta WHERE id_usuario = %s", (id_usuario,))
-        terapeuta = cursor.fetchone()
-
-        #Verifica se é paciente
-        cursor.execute("SELECT * FROM paciente WHERE id_usuario = %s", (id_usuario,))
-        paciente = cursor.fetchone()
-
-        tipo = None
-        extra = {}
-
-        if terapeuta:
-            tipo = "terapeuta"
-            extra = {
-                "especialidade": terapeuta["especialidade"],
-                "crp": terapeuta["CRP"],
-                "disponibilidade": terapeuta["disponibilidade"]
-            }
-        elif paciente:
-            tipo = "paciente"
-        else:
-            tipo = "usuario"
-
-        return jsonify({
-            "mensagem": "Login realizado com sucesso",
-            "usuario": {
-                "id": usuario["id_usuario"],
-                "nome": usuario["nome"],
-                "email": usuario["email"],
-                "cpf": usuario["cpf"],
-                "tipo": tipo,
-                **extra
-            }
-        }), 200
-
-    except Exception as e:
-        return jsonify({"erro": str(e)}), 500
-
-    finally:
-        cursor.close()
-        conexao.close()
+# ======== EXECUTAR API ==========
+if __name__ == "__main__":
+    app.run(debug=True)
