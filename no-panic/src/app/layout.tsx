@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import { LoadUserProvider } from '@/components/LoadUserProvider/LoadUserProvider';
+import { PrimeiroLoginForm } from '@/components/PrimeiroLoginForm/PrimeiroLoginForm';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -23,14 +26,46 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export interface User {
+  email: string;
+  senha: string;
+  primeiro_login: number;
+}
+
+const loadUser = async () => {
+  const cookie = await cookies();
+  const cookieUser = cookie.get('user');
+  let user: User | undefined;
+  if (cookieUser) {
+    try {
+      user = JSON.parse(cookieUser.value) as User;
+    } catch {
+      user = undefined;
+    }
+  }
+
+  if (user) {
+    return user;
+  }
+};
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const user = await loadUser();
   return (
     <html lang='en'>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
+        {user?.primeiro_login === 1 ? (
+          <h1>
+            <PrimeiroLoginForm />
+          </h1>
+        ) : (
+          ''
+        )}
+        <LoadUserProvider />
         {children}
       </body>
     </html>

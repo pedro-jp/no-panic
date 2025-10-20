@@ -90,9 +90,11 @@ def login():
 
         if bcrypt.checkpw(senha.encode('utf-8'), usuario["senha"].encode('utf-8')):
             newUsuario = {
+                "id": usuario["id_usuario"],
                 "nome": usuario["nome"],
                 "email": usuario["email"],
-                "cpf": usuario["cpf"]
+                "cpf": usuario["cpf"],
+                "primeiro_login": usuario["primeiro_login"]
             }
             return jsonify({"usuario": newUsuario}), 200
         else:
@@ -103,6 +105,38 @@ def login():
         cursor.close()
         conexao.close()
 
+
+@app.route('/load-user', methods=['POST'])
+def loadUser():
+    data = request.get_json(force=True)  # força JSON mesmo se Content-Type estiver errado
+    if not data:
+        return jsonify({"erro": "JSON inválido"}), 400
+
+    email = data.get("email")
+    if not email :
+        return jsonify({"erro": "Informe email"}), 400
+
+    conexao = get_connection()
+    cursor = conexao.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT * FROM usuario WHERE email = %s", (email,))
+        usuario = cursor.fetchone()
+        if not usuario:
+            return jsonify({"erro": "Usuário não encontrado"}), 404
+
+        newUsuario = {
+            "id": usuario["id_usuario"],
+            "nome": usuario["nome"],
+            "email": usuario["email"],
+            "cpf": usuario["cpf"],
+            "primeiro_login": usuario["primeiro_login"]
+        }
+        return jsonify({"usuario": newUsuario}), 200
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+    finally:
+        cursor.close()
+        conexao.close()
 
 @app.route('/primeiro-login', methods=['POST'])
 def primeiroLogin():

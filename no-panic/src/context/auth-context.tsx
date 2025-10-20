@@ -12,6 +12,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   login: (email: string, senha: string) => void;
+  load: () => void;
   sign: (email: string, senha: string, cpf: string, nome: string) => void;
   logout: () => void;
   isLoading: boolean;
@@ -113,13 +114,46 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const load = async () => {
+    setIsLoading(true);
+    if (!user?.email) return;
+
+    const data = {
+      email: user.email,
+    };
+
+    try {
+      const response = await fetch(`${SERVER}/load-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const err = await response.text();
+        throw new Error(err || 'Erro ao entrar');
+      }
+      const { usuario } = await response.json();
+      setCookie('user', JSON.stringify(usuario), { maxAge: 60 * 60 * 24 * 7 }); // 7 dias
+      setUser(user);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = () => {
     deleteCookie('user');
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, sign, logout, isLoading }}>
+    <AuthContext.Provider
+      value={{ user, login, load, sign, logout, isLoading }}
+    >
       {children}
     </AuthContext.Provider>
   );
