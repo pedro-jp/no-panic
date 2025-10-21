@@ -85,15 +85,20 @@ export const PrimeiroLoginForm = () => {
     <Modal canExit={false}>
       <div className={styles.container}>
         <form onSubmit={handleSubmit}>
-          <Input label='Data de nascimento' type='date' required />
-          <Input
-            label='Cep da residência'
-            type='text'
-            required
-            maxLength={8}
-            minLength={8}
-            onChange={(e) => setCep(e.target.value)}
-          />
+          <div className={styles.line}>
+            <Input label='Data de nascimento' type='date' required />
+            <Input
+              className={styles.cep}
+              label='Cep da residência'
+              type='text'
+              required
+              maxLength={8}
+              minLength={8}
+              onChange={(e) => setCep(e.target.value)}
+              placeholder='00000-000'
+            />
+            <Input label='Whatsapp contato de emergência' type='text' />
+          </div>
           {endereco && (
             <Input
               label='Endereço'
@@ -126,7 +131,6 @@ export const PrimeiroLoginForm = () => {
               />
             </>
           )}
-          <Input label='Whatsapp contato de emergência' type='text' />
           <Button disabled={loading} type='submit'>
             Concluir
           </Button>

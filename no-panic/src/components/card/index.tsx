@@ -3,6 +3,7 @@ import styles from './styles.module.css';
 import Image from 'next/image';
 import { FiClock } from 'react-icons/fi';
 import { IoStar } from 'react-icons/io5';
+import { Button } from '../ui/button';
 
 export const Card = () => {
   return (
@@ -32,7 +33,7 @@ export const Card = () => {
           <span>120 sessões</span>
         </p>
       </div>
-      <button>Agendar Sessão</button>
+      <Button>Agendar Sessão</Button>
     </div>
   );
 };

@@ -4,4 +4,30 @@
   width: 100%;
   max-width: var(--container-max);
   margin: 0 auto;
+  border: var(--border);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    .line {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+
+      label {
+        margin-inline: auto;
+      }
+    }
+  }
+
+  &:hover {
+    box-shadow: var(--shadow-lg);
+  }
 }
