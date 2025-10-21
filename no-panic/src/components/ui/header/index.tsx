@@ -43,7 +43,14 @@ export const Header = () => {
             <IoHeart color='red' />
             sos
           </button>
-          <Image src='/logo.png' alt='Perfil' width={20} height={20} />
+          <div className={styles.config}>
+            <Image src='/logo.png' alt='Perfil' width={20} height={20} />
+            {/* <ul className={styles.content}>
+              <li>oi</li>
+              <li>oi</li>
+              <li>oi</li>
+            </ul> */}
+          </div>
         </div>
       </menu>
       <nav>

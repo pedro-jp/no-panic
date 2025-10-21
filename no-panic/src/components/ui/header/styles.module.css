@@ -140,3 +140,25 @@
     list-style: none;
   }
 }
+
+.config {
+  position: relative;
+  display: flex;
+  overflow: visible;
+
+  .content {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    background-color: red;
+    width: fit-content;
+    padding: 1rem;
+    z-index: 1;
+  }
+
+  img {
+    height: 100%;
+    width: 100%;
+    cursor: pointer;
+  }
+}

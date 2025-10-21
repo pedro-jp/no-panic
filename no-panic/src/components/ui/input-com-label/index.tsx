@@ -9,7 +9,7 @@ export const Input = ({ label, ...rest }: Props) => {
   return (
     <label className={styles.label}>
       {label}
-      <input {...rest} spellCheck={false} />
+      <input {...rest} />
     </label>
   );
 };
