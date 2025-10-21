@@ -220,6 +220,41 @@ def cadastro_terapeuta():
         cursor.close()
         conexao.close()
 
+
+@app.route('/cadastro-usuario', methods=['PUT'])
+def cadastro_usuario():
+    data = request.json
+    id_usuario = data.get("id")
+    data_nascimento = data.get("data_nascimento")
+    endereco = data.get("endereco")
+    contato_emergencia = data.get("contato_emergencia")
+
+    if not all([id_usuario,data_nascimento, endereco, contato_emergencia]):
+        return jsonify({"erro": "Campos obrigatórios faltando"}), 400
+
+
+    conexao = get_connection()
+    cursor = conexao.cursor()
+
+    try:
+
+        # Inserir na tabela usuario - testando na tabela usuario...
+        cursor.execute(
+            "UPDATE usuario SET data_nascimento = %s, endereco =  %s, contato_emergencia = %s WHERE id_usuario = %s",
+            (data_nascimento, endereco, contato_emergencia, id_usuario)
+        )
+        conexao.commit()
+
+        return jsonify({"mensagem": "Usuário alterado com sucesso!"}), 201
+
+    except Exception as e:
+        conexao.rollback()
+        return jsonify({"erro": str(e)}), 500
+
+    finally:
+        cursor.close()
+        conexao.close()
+
 # ======== EXECUTAR API ==========
 if __name__ == "__main__":
     app.run(debug=True)
