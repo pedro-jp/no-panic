@@ -1,9 +1,11 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Modal } from '../modal/Modal';
 import styles from './styles.module.css';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input-com-label';
+import { useAuth } from '@/context/auth-context';
+import { User } from '@/app/layout';
 
 interface Address {
   cep: string;
@@ -16,6 +18,11 @@ interface Address {
   gia?: string;
   ddd?: string;
   siafi?: string;
+}
+
+interface PrimeiroLoginFormProps {
+  user: User;
+  // other props...
 }
 
 export async function buscarCep(cep: string): Promise<Address | null> {
@@ -44,13 +51,22 @@ export async function buscarCep(cep: string): Promise<Address | null> {
   }
 }
 
-export const PrimeiroLoginForm = () => {
+export const PrimeiroLoginForm = ({ user }: PrimeiroLoginFormProps) => {
   const [loading, setLoading] = useState(false);
   const [cep, setCep] = useState('');
+  const [cepText, setCepText] = useState('');
   const [endereco, setEndereco] = useState<Address | null>(null);
   const [complemento, setComplemento] = useState<string>();
   const [numero, setNumero] = useState<string>();
+  const [contato_emergencia, setContato_emergencia] = useState(''); // número puro
+  const [telefoneFormatado, setTelefoneFormatado] = useState(''); // string formatada
+  const hoje = new Date();
+  const anoAtual = hoje.getFullYear();
+  const anoMinimo = anoAtual - 18; // 18 anos atrás
 
+  const [data_nascimento, setData_nascimento] = useState(
+    new Date().toISOString().split('T')[0]
+  );
   useEffect(() => {
     if (cep.length === 8) {
       console.log(cep);
@@ -76,28 +92,93 @@ export const PrimeiroLoginForm = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
+    if (!user?.id) return;
+    const data = {
+      id: user.id,
+      endereco: endereco?.logradouro,
+      contato_emergencia: contato_emergencia,
+      data_nascimento: data_nascimento,
+    };
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/cadastro`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+    } catch (error) {
+      console.log(error);
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
+
+  function formatarCEP(valor: string) {
+    const apenasNumeros = valor.replace(/\D/g, '').slice(0, 8); // só números, máximo 8
+    const cepFormatado =
+      apenasNumeros.length > 5
+        ? apenasNumeros.replace(/^(\d{5})(\d{1,3})/, '$1-$2')
+        : apenasNumeros;
+
+    setCep(apenasNumeros);
+    setCepText(cepFormatado);
+  }
+
+  function formatarTelefone(valor: string) {
+    const apenasNumeros = valor.replace(/\D/g, '').slice(0, 11); // DDD + 9 dígitos
+    setContato_emergencia(apenasNumeros);
+
+    let telefone = apenasNumeros;
+
+    if (apenasNumeros.length > 2) {
+      telefone = `(${apenasNumeros.slice(0, 2)}) ${apenasNumeros.slice(2)}`;
+    }
+
+    if (apenasNumeros.length > 7) {
+      telefone = `(${apenasNumeros.slice(0, 2)}) ${apenasNumeros.slice(
+        2,
+        7
+      )}-${apenasNumeros.slice(7)}`;
+    }
+
+    setTelefoneFormatado(telefone);
+  }
 
   return (
     <Modal canExit={false}>
       <div className={styles.container}>
         <form onSubmit={handleSubmit}>
           <div className={styles.line}>
-            <Input label='Data de nascimento' type='date' required />
+            <Input
+              label='Data de nascimento'
+              type='date'
+              value={data_nascimento}
+              min='1915-01-01'
+              max={`${anoMinimo}-${String(hoje.getMonth() + 1).padStart(
+                2,
+                '0'
+              )}-${String(hoje.getDate()).padStart(2, '0')}`}
+              onChange={(e) => setData_nascimento(e.target.value)}
+              required
+            />
             <Input
               className={styles.cep}
               label='Cep da residência'
+              value={cepText}
               type='text'
               required
-              maxLength={8}
-              minLength={8}
-              onChange={(e) => setCep(e.target.value)}
+              maxLength={9}
+              minLength={9}
+              onChange={(e) => formatarCEP(e.target.value)}
               placeholder='00000-000'
             />
-            <Input label='Whatsapp contato de emergência' type='text' />
+            <Input
+              label='Whatsapp contato de emergência'
+              value={telefoneFormatado}
+              type='text'
+              onChange={(e) => formatarTelefone(e.target.value)}
+            />
           </div>
           {endereco && (
             <Input

@@ -27,6 +27,7 @@ export const metadata: Metadata = {
 };
 
 export interface User {
+  id: number;
   email: string;
   senha: string;
   primeiro_login: number;
@@ -58,7 +59,11 @@ export default async function RootLayout({
   return (
     <html lang='en'>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        {user?.primeiro_login === 1 ? <h1>{<PrimeiroLoginForm />}</h1> : ''}
+        {user?.primeiro_login === 1 ? (
+          <h1>{<PrimeiroLoginForm user={user} />}</h1>
+        ) : (
+          ''
+        )}
         <LoadUserProvider />
         {children}
       </body>

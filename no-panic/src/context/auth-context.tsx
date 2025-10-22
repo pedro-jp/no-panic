@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 
 // ===== Tipagem =====
 interface User {
+  id_usuario: string;
   nome: string;
   email: string;
   cpf: string;
