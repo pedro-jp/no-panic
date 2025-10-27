@@ -1,12 +1,11 @@
 'use client';
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal } from '../modal/Modal';
 import styles from './styles.module.css';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input-com-label';
-import { useAuth } from '@/context/auth-context';
 import { User } from '@/app/layout';
-import { redirect } from 'next/navigation';
+import { setCookie } from 'cookies-next';
 
 interface Address {
   cep: string;
@@ -124,13 +123,43 @@ export const PrimeiroLoginForm = ({ user }: PrimeiroLoginFormProps) => {
             body: JSON.stringify(id),
           }
         );
-
+        load();
         window.location.href = '/terapeutas';
       }
     } catch (error) {
       console.log(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const load = async () => {
+    if (!user?.email) return;
+
+    const data = {
+      email: user.email,
+    };
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/load-user`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        }
+      );
+
+      if (!response.ok) {
+        const err = await response.text();
+        throw new Error(err || 'Erro ao entrar');
+      }
+      const { usuario } = await response.json();
+      setCookie('user', JSON.stringify(usuario), { maxAge: 60 * 60 * 24 * 7 }); // 7 dias
+    } catch (err) {
+      console.error(err);
     }
   };
 

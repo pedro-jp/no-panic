@@ -50,23 +50,56 @@ const loadUser = async () => {
   }
 };
 
+const load = async (email: string) => {
+  if (!email) return;
+
+  const data = {
+    email,
+  };
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_SERVER_URL}/load-user`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      }
+    );
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(err || 'Erro ao entrar');
+    }
+    const { usuario } = await response.json();
+    return usuario;
+  } catch (err) {
+    console.error(err);
+  }
+};
+
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const user = await loadUser();
-  return (
-    <html lang='en'>
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        {/* {user?.primeiro_login === 1 ? (
-          <h1>{<PrimeiroLoginForm user={user} />}</h1>
-        ) : (
-          ''
-        )} */}
-        <LoadUserProvider />
-        {children}
-      </body>
-    </html>
-  );
+  if (user) {
+    const usuario = await load(user?.email);
+    return (
+      <html lang='en'>
+        <body className={`${geistSans.variable} ${geistMono.variable}`}>
+          {usuario?.primeiro_login === 1 ? (
+            <h1>{<PrimeiroLoginForm user={user} />}</h1>
+          ) : (
+            ''
+          )}
+          <LoadUserProvider />
+          {children}
+        </body>
+      </html>
+    );
+  }
 }
