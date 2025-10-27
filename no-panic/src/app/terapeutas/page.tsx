@@ -28,7 +28,7 @@ const Page = () => {
     if (especialidade) {
       try {
         const response = await axios.get(
-          `http://127.0.0.1:5000/terapeutas?especialidade=${especialidade}`
+          `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas?especialidade=${especialidade}`
         );
         const terapeutasData = response.data;
         console.log(terapeutasData);
@@ -40,7 +40,9 @@ const Page = () => {
     }
 
     try {
-      const response = await axios.get('http://127.0.0.1:5000/terapeutas');
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas`
+      );
       const terapeutasData = response.data;
       console.log(terapeutasData);
       console.log(terapeutasData.terapeutas);
