@@ -1,16 +1,63 @@
+'use client';
 import { Container } from '@/components/ui/container';
 import { Content } from '@/components/ui/content';
 import { Header } from '@/components/ui/header';
-import { Metadata } from 'next';
-import React from 'react';
+// import { Metadata } from 'next';
+import React, { useEffect, useState } from 'react';
 import styles from './styles.module.css';
 import { Card } from '@/components/card';
+import axios from 'axios';
 
-export const metadata: Metadata = {
-  title: 'Terapeutas | NoPanic',
-};
+// export const metadata: Metadata = {
+//   title: 'Terapeutas | NoPanic',
+// };
 
-const page = () => {
+export interface Terapeuta {
+  nome: string;
+  id_usuario: number;
+  especialidade: string;
+  CRP: string;
+  disponibilidade: string;
+}
+
+const Page = () => {
+  const [terapeutas, setTerapeutas] = useState<Terapeuta[]>();
+  const [especialidade, setEspecialidade] = useState<string>('');
+
+  const fetchTerapeutas = async () => {
+    if (especialidade) {
+      try {
+        const response = await axios.get(
+          `http://127.0.0.1:5000/terapeutas?especialidade=${especialidade}`
+        );
+        const terapeutasData = response.data;
+        console.log(terapeutasData);
+        console.log(terapeutasData.terapeutas);
+        return await terapeutasData.terapeutas;
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
+    try {
+      const response = await axios.get('http://127.0.0.1:5000/terapeutas');
+      const terapeutasData = response.data;
+      console.log(terapeutasData);
+      console.log(terapeutasData.terapeutas);
+      return await terapeutasData.terapeutas;
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const terapeutas = await fetchTerapeutas();
+      setTerapeutas(terapeutas!);
+    };
+    fetchData();
+  }, [especialidade]);
+
   return (
     <>
       <Header />
@@ -25,14 +72,13 @@ const page = () => {
               className={styles.search}
               type='text'
               placeholder='Buscar por especialidade'
+              value={especialidade}
+              onChange={(e) => setEspecialidade(e.target.value)}
             />
-
             <div className={styles.card_container}>
-              <Card />
-              <Card />
-              <Card />
-              <Card />
-              <Card />
+              {terapeutas?.map((terapeuta) => (
+                <Card key={terapeuta.id_usuario} terapeuta={terapeuta} />
+              ))}
             </div>
           </main>
         </Content>
@@ -41,4 +87,4 @@ const page = () => {
   );
 };
 
-export default page;
+export default Page;

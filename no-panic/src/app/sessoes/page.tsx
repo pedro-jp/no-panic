@@ -11,7 +11,7 @@ const Page = () => {
       <Container>
         <Content>
           <main>
-            <div className={styles.calendario}>calendario</div>
+            <div className={styles.calendario}>sessoes</div>
           </main>
         </Content>
       </Container>

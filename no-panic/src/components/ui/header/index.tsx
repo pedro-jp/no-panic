@@ -25,10 +25,10 @@ export const Header = () => {
           </li>
           <li>
             <Link
-              href='/calendario
+              href='/sessoes
             '
             >
-              Calendário
+              Sessões
             </Link>
           </li>
           <li>

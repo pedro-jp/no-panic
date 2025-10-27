@@ -4,8 +4,13 @@ import Image from 'next/image';
 import { FiClock } from 'react-icons/fi';
 import { IoStar } from 'react-icons/io5';
 import { Button } from '../ui/button';
+import { Terapeuta } from '@/app/terapeutas/page';
 
-export const Card = () => {
+type Prop = {
+  terapeuta: Terapeuta;
+};
+
+export const Card = ({ terapeuta }: Prop) => {
   return (
     <div className={styles.card}>
       <Image
@@ -16,14 +21,14 @@ export const Card = () => {
       />
 
       <div className={styles.info}>
-        <h4>Nome do terapeuta</h4>
-        <p>Crp do terapeuta </p>
+        <h4>{terapeuta.nome}</h4>
+        <p>{terapeuta.CRP} </p>
       </div>
       <div className={styles.info}>
-        <p className={styles.especialidade}>Especialidade do terapeuta</p>
+        <p className={styles.especialidade}>{terapeuta.especialidade}</p>
         <p className={styles.dia_atendimento}>
           <FiClock />
-          Qua-Dom 11h-20h
+          {terapeuta.disponibilidade}
         </p>
         <p className={styles.nota}>
           <span>
@@ -33,7 +38,7 @@ export const Card = () => {
           <span>120 sessões</span>
         </p>
       </div>
-      <Button>Agendar Sessão</Button>
+      <Button style={{ paddingBlock: '.5rem' }}>Agendar Sessão</Button>
     </div>
   );
 };

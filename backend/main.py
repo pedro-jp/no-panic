@@ -157,7 +157,7 @@ def loadUser():
         conexao.close()
 
 
-@app.route('/primeiro-login', methods=['POST'])
+@app.route('/primeiro-login', methods=['PUT'])
 def primeiroLogin():
     data = request.get_json(force=True)  # força JSON mesmo se Content-Type estiver errado
     if not data:
@@ -246,6 +246,50 @@ def cadastro_usuario():
         conexao.commit()
 
         return jsonify({"mensagem": "Usuário alterado com sucesso!"}), 201
+
+    except Exception as e:
+        conexao.rollback()
+        return jsonify({"erro": str(e)}), 500
+
+    finally:
+        cursor.close()
+        conexao.close()
+
+@app.route('/terapeutas', methods=['GET'])
+def listTerapeutas():
+    conexao = get_connection()
+    cursor = conexao.cursor(dictionary=True)
+    especialidade = request.args.get('especialidade')
+
+    print(especialidade)
+
+    if especialidade:
+        query = """
+            SELECT u.id_usuario, u.nome, u.email,
+                t.especialidade, t.CRP, t.disponibilidade
+            FROM usuario u
+            LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario
+            WHERE t.especialidade LIKE %s
+        """
+    else:
+        query = """
+            SELECT u.id_usuario, u.nome, u.email,
+                t.especialidade, t.CRP, t.disponibilidade
+            FROM usuario u
+            LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario
+        """
+
+    try:
+        if especialidade:
+            cursor.execute(query, (f"%{especialidade}%",))
+        else:
+            cursor.execute(query)
+
+        terapeutas = cursor.fetchall()
+
+        return jsonify({
+            "terapeutas": terapeutas
+        }), 200
 
     except Exception as e:
         conexao.rollback()

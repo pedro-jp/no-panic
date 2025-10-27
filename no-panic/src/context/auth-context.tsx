@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useContext, ReactNode } from 'react';
 import { setCookie, getCookie, deleteCookie } from 'cookies-next';
-import { useRouter } from 'next/navigation';
 
 // ===== Tipagem =====
 interface User {
@@ -31,7 +30,6 @@ const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
 
   // Carrega usuário do cookie
   useEffect(() => {
@@ -107,7 +105,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const { usuario } = await response.json();
       setCookie('user', JSON.stringify(usuario), { maxAge: 60 * 60 * 24 * 7 }); // 7 dias
       setUser(user);
-      router.push('/terapeutas');
+      window.location.href = '/terapeutas';
     } catch (err) {
       console.error(err);
     } finally {

@@ -59,11 +59,11 @@ export default async function RootLayout({
   return (
     <html lang='en'>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        {user?.primeiro_login === 1 ? (
+        {/* {user?.primeiro_login === 1 ? (
           <h1>{<PrimeiroLoginForm user={user} />}</h1>
         ) : (
           ''
-        )}
+        )} */}
         <LoadUserProvider />
         {children}
       </body>

@@ -6,6 +6,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input-com-label';
 import { useAuth } from '@/context/auth-context';
 import { User } from '@/app/layout';
+import { redirect } from 'next/navigation';
 
 interface Address {
   cep: string;
@@ -100,13 +101,32 @@ export const PrimeiroLoginForm = ({ user }: PrimeiroLoginFormProps) => {
       data_nascimento: data_nascimento,
     };
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/cadastro`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/cadastro-usuario`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        }
+      );
+
+      if (response.status === 201) {
+        const id = { id: user.id };
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_SERVER_URL}/primeiro-login`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(id),
+          }
+        );
+
+        window.location.href = '/terapeutas';
+      }
     } catch (error) {
       console.log(error);
     } finally {
