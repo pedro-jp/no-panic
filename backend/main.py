@@ -299,6 +299,107 @@ def listTerapeutas():
         cursor.close()
         conexao.close()
 
+
+
+# ======== ROTA FAVORITOS ========
+@app.route('/favoritar', methods=['POST'])
+def favoritar_terapeuta():
+    conexao = get_connection()
+    cursor = conexao.cursor()
+    try:
+        data = request.get_json()
+        id_usuario = data['id_usuario']
+        id_terapeuta = data['id_terapeuta']
+    except Exception as e:
+        return jsonify({"erro": "Dados inválidos: id_usuario e id_terapeuta são obrigatórios."}), 400
+    
+    query = """
+    INSERT INTO usuario_salva_terapeuta (id_usuario, id_terapeuta)
+    VALUES (%s, %s)
+    """
+
+    try:
+        cursor.execute(query, (id_usuario, id_terapeuta))
+        conexao.commit()
+        
+        return jsonify({"mensagem": "Terapeuta favoritado com sucesso!"}), 201
+
+    except Exception as e:
+        conexao.rollback()
+        return jsonify({"erro": f"Erro ao favoritar terapeuta: {str(e)}"}), 500
+
+    finally:
+        cursor.close()
+        conexao.close()
+
+# ======== ROTA PARA LISTAR TERAPEUTAS =======
+@app.route('/usuarios/<int:id_usuario>/terapeutas', methods=['GET'])
+def listar_terapeutas_por_usuario(id_usuario):
+    conexao = get_connection()
+    cursor = conexao.cursor(dictionary=True)
+    
+    # Query de listagem
+    query = """
+    SELECT 
+        u.id_usuario, 
+        u.nome, 
+        u.email, 
+        t.especialidade
+    FROM 
+        usuario_salva_terapeuta ust
+    JOIN 
+        terapeuta t ON ust.id_terapeuta = t.id_usuario
+    JOIN
+        usuario u ON t.id_usuario = u.id_usuario
+    WHERE 
+        ust.id_usuario = %s
+    """
+    
+    try:
+        cursor.execute(query, (id_usuario,))
+        terapeutas_favoritos = cursor.fetchall()
+        
+        return jsonify({"terapeutas": terapeutas_favoritos}), 200
+
+    except Exception as e:
+        return jsonify({"erro": f"Erro ao listar terapeutas favoritos: {str(e)}"}), 500
+
+    finally:
+        cursor.close()
+        conexao.close()
+    
+# ======== ROTA PARA LISTAR USUÁRIOS POR TERAPEUTAS ========
+@app.route('/terapeutas/<int:id_terapeuta>/usuarios', methods=['GET'])
+def listar_usuarios_por_terapeuta(id_terapeuta):
+    conexao = get_connection()
+    cursor = conexao.cursor(dictionary=True)
+    
+    # Query de listagem
+    query = """
+    SELECT 
+        u.id_usuario, 
+        u.nome, 
+        u.email
+    FROM 
+        usuario_salva_terapeuta ust
+    JOIN 
+        usuario u ON ust.id_usuario = u.id_usuario
+    WHERE 
+        ust.id_terapeuta = %s
+    """
+    
+    try:
+        cursor.execute(query, (id_terapeuta,))
+        usuarios_que_favoritaram = cursor.fetchall()
+        
+        return jsonify({"usuarios": usuarios_que_favoritaram}), 200
+
+    except Exception as e:
+        return jsonify({"erro": f"Erro ao listar usuários que favoritaram: {str(e)}"}), 500
+
+    finally:
+        cursor.close()
+        conexao.close()
 # ======== EXECUTAR API ==========
 if __name__ == "__main__":
     app.run(debug=True)
