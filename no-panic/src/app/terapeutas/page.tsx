@@ -78,9 +78,11 @@ const Page = () => {
               onChange={(e) => setEspecialidade(e.target.value)}
             />
             <div className={styles.card_container}>
-              {terapeutas?.map((terapeuta) => (
-                <Card key={terapeuta.id_usuario} terapeuta={terapeuta} />
-              ))}
+              {terapeutas
+                ?.filter((terapeuta) => terapeuta.CRP)
+                .map((terapeuta) => (
+                  <Card key={terapeuta.id_usuario} terapeuta={terapeuta} />
+                ))}
             </div>
           </main>
         </Content>

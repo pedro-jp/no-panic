@@ -89,10 +89,10 @@ export default async function RootLayout({
   if (user) {
     const usuario = await load(user?.email);
     return (
-      <html lang='en'>
+      <html lang='pt-BR'>
         <body className={`${geistSans.variable} ${geistMono.variable}`}>
           {usuario?.primeiro_login === 1 ? (
-            <h1>{<PrimeiroLoginForm user={user} />}</h1>
+            <PrimeiroLoginForm user={user} />
           ) : (
             ''
           )}
@@ -102,4 +102,11 @@ export default async function RootLayout({
       </html>
     );
   }
+  return (
+    <html lang='pt-BR'>
+      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+        {children}
+      </body>
+    </html>
+  );
 }
