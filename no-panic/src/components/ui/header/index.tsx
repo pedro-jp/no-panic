@@ -24,6 +24,9 @@ export const Header = () => {
             <Link href='/terapeutas'>Terapeutas</Link>
           </li>
           <li>
+            <Link href='/favoritos'>Favoritos</Link>
+          </li>
+          <li>
             <Link
               href='/sessoes
             '
@@ -57,6 +60,9 @@ export const Header = () => {
         <ul className={styles.ul_mobile}>
           <li>
             <Link href='/terapeutas'>Terapeutas</Link>
+          </li>
+          <li>
+            <Link href='/favoritos'>Favoritos</Link>
           </li>
           <li>
             <Link href='/calendario'>Calendário</Link>

@@ -4,6 +4,8 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { LoadUserProvider } from '@/components/LoadUserProvider/LoadUserProvider';
 import { PrimeiroLoginForm } from '@/components/PrimeiroLoginForm/PrimeiroLoginForm';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -98,6 +100,7 @@ export default async function RootLayout({
           )}
           <LoadUserProvider />
           {children}
+          <ToastContainer position='top-right' autoClose={3000} />
         </body>
       </html>
     );
@@ -106,6 +109,7 @@ export default async function RootLayout({
     <html lang='pt-BR'>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         {children}
+        <ToastContainer position='top-right' autoClose={3000} />
       </body>
     </html>
   );

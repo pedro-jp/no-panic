@@ -7,6 +7,7 @@ import React, { useEffect, useState } from 'react';
 import styles from './styles.module.css';
 import { Card } from '@/components/card';
 import axios from 'axios';
+import { AuthProvider } from '@/context/auth-context';
 
 // export const metadata: Metadata = {
 //   title: 'Terapeutas | NoPanic',
@@ -31,9 +32,7 @@ const Page = () => {
           `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas?especialidade=${especialidade}`
         );
         const terapeutasData = response.data;
-        console.log(terapeutasData);
-        console.log(terapeutasData.terapeutas);
-        return await terapeutasData.terapeutas;
+        return await terapeutasData;
       } catch (error) {
         console.log(error);
       }
@@ -44,9 +43,7 @@ const Page = () => {
         `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas`
       );
       const terapeutasData = response.data;
-      console.log(terapeutasData);
-      console.log(terapeutasData.terapeutas);
-      return await terapeutasData.terapeutas;
+      return await terapeutasData;
     } catch (error) {
       console.log(error);
     }
@@ -77,13 +74,15 @@ const Page = () => {
               value={especialidade}
               onChange={(e) => setEspecialidade(e.target.value)}
             />
-            <div className={styles.card_container}>
-              {terapeutas
-                ?.filter((terapeuta) => terapeuta.CRP)
-                .map((terapeuta) => (
-                  <Card key={terapeuta.id_usuario} terapeuta={terapeuta} />
-                ))}
-            </div>
+            <AuthProvider>
+              <div className={styles.card_container}>
+                {terapeutas
+                  ?.filter((terapeuta) => terapeuta.CRP)
+                  .map((terapeuta) => (
+                    <Card key={terapeuta.id_usuario} terapeuta={terapeuta} />
+                  ))}
+              </div>
+            </AuthProvider>
           </main>
         </Content>
       </Container>

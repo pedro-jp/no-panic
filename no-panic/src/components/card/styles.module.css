@@ -1,79 +1,135 @@
 .card {
+  /* Redesenhando o card para combinar com o estilo de favoritos */
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: var(--spacing-sm);
+  gap: 1rem;
   background-color: #fff;
   width: 100%;
-  padding: var(--spacing-md);
-  border-radius: var(--border-radius);
-  border: var(--border);
+  padding: 1.75rem 1.5rem;
+  border-radius: 16px;
+  border: none;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  position: relative;
+}
 
-  &:hover {
-    box-shadow: var(--shadow);
-  }
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
 
-  img {
-    border-radius: 100%;
-  }
+.card img {
+  border-radius: 100%;
+  border: 3px solid var(--primary-color);
+  object-fit: cover;
+}
 
-  .info {
-    color: var(--primary-color);
+.avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
 
-    &:nth-child(3) {
-      align-self: baseline;
-      width: 100%;
-    }
+.info {
+  color: var(--primary-color);
+  width: 100%;
+}
 
-    p {
-      color: var(--font-90);
-      font-size: var(--size-sm);
-      margin-top: var(--spacing-xsm);
-    }
+.info:nth-child(1) {
+  display: grid;
+  grid-template-columns: repeat(2, 0.5fr);
+  align-items: center;
+}
+.info:nth-child(3) {
+  align-self: baseline;
+  width: 100%;
+}
 
-    p.especialidade {
-      color: #fff;
-      background-color: #79a0c7;
-      padding: var(--padding-md-2);
-      border-radius: var(--border-radius);
-      max-width: fit-content;
-      font-size: var(--size-xsm);
-    }
+.info h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  color: #1e293b;
+}
 
-    p.dia_atendimento {
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-xsm);
-    }
+.info p {
+  color: var(--font-90);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
 
-    p.nota {
-      display: flex;
-      justify-content: space-between;
+.info p.especialidade {
+  /* Melhorando o badge de especialidade */
+  color: #fff;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  max-width: fit-content;
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
 
-      span:first-child {
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-xsm);
-        color: #000;
-      }
-    }
-  }
-  button {
-    background-color: var(--primary-color);
-    color: #fff;
-    padding-block: 4px;
-    font-size: var(--size-xsm);
-    font-weight: bold;
-    border-radius: var(--border-radius);
-    width: 100%;
+.info p.dia_atendimento {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #64748b;
+  font-size: 0.85rem;
+}
 
-    &:hover {
-      box-shadow: var(--shadow);
-    }
+.info p.nota {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e2e8f0;
+}
 
-    &:active {
-      scale: 0.95;
-    }
-  }
+.info p.nota span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #1e293b;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.info p.nota span:last-child {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.card button {
+  /* Estilizando botão similar ao de favoritos */
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 10px;
+  width: 100%;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+.card button:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.card button:active {
+  transform: scale(0.98);
 }
