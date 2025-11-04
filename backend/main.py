@@ -1,6 +1,7 @@
-from flask import Flask, request, jsonify,render_template
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import mysql.connector
+from mysql.connector import pooling
 import bcrypt
 from dotenv import load_dotenv
 import os
@@ -14,23 +15,38 @@ DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_NAME = os.getenv("DB_NAME")
 DB_PORT = os.getenv("DB_PORT")
 
-
 app = Flask(__name__)
 CORS(app)
 
-# ======== CONEXÃO ==========
+# ======== POOL DE CONEXÕES ==========
+# Em vez de abrir uma conexão nova a cada request,
+# o pool mantém conexões abertas e reaproveita — muito mais rápido.
+dbconfig = {
+    "host": DB_HOST,
+    "user": DB_USER,
+    "password": DB_PASSWORD,
+    "database": DB_NAME,
+    "port": DB_PORT,
+    "autocommit": True
+}
+
+connection_pool = pooling.MySQLConnectionPool(
+    pool_name="main_pool",
+    pool_size=8,  # ajusta conforme a carga do servidor
+    pool_reset_session=True,
+    **dbconfig
+)
+
 def get_connection():
-    return mysql.connector.connect(
-        host=DB_HOST,
-        user=DB_USER,
-        password=DB_PASSWORD,
-        database=DB_NAME,
-        port=DB_PORT
-    )
+    return connection_pool.get_connection()
+
+# =====================================================
+# ROTAS (todo o resto do teu código, sem mudanças)
+# =====================================================
 
 @app.route('/', methods=['GET'])
 def home():
-    return  render_template("index.html")
+    return render_template("index.html")
 
 # ======== ROTA: CADASTRO ==========
 @app.route('/cadastro', methods=['POST'])
@@ -50,17 +66,12 @@ def cadastro():
     cursor = conexao.cursor()
 
     try:
-        # Inserir na tabela usuario
         cursor.execute(
             "INSERT INTO usuario (nome, cpf, email, senha) VALUES (%s, %s, %s, %s)",
             (nome, cpf, email, senha_hash.decode('utf-8'))
         )
-        conexao.commit()
         id_usuario = cursor.lastrowid
-
-        conexao.commit()
         return jsonify({"mensagem": "Usuário cadastrado com sucesso!"}), 201
-
     except mysql.connector.Error as e:
         conexao.rollback()
         return jsonify({"erro": str(e)}), 500
@@ -71,7 +82,7 @@ def cadastro():
 # ======== ROTA: LOGIN ==========
 @app.route('/login', methods=['POST'])
 def login():
-    data = request.get_json(force=True)  # força JSON mesmo se Content-Type estiver errado
+    data = request.get_json(force=True)
     if not data:
         return jsonify({"erro": "JSON inválido"}), 400
 
@@ -104,7 +115,6 @@ def login():
     finally:
         cursor.close()
         conexao.close()
-
 
 @app.route('/load-user', methods=['POST'])
 def loadUser():
@@ -140,7 +150,6 @@ def loadUser():
             "terapeuta": None
         }
 
-        # Se ele for terapeuta, adiciona os dados
         if usuario["CRP"]:
             newUsuario["terapeuta"] = {
                 "CRP": usuario["CRP"],
@@ -156,10 +165,9 @@ def loadUser():
         cursor.close()
         conexao.close()
 
-
 @app.route('/primeiro-login', methods=['PUT'])
 def primeiroLogin():
-    data = request.get_json(force=True)  # força JSON mesmo se Content-Type estiver errado
+    data = request.get_json(force=True)
     if not data:
         return jsonify({"erro": "JSON inválido"}), 400
 
@@ -184,8 +192,6 @@ def primeiroLogin():
         cursor.close()
         conexao.close()
 
-#=========TESTE TERAPEUTA=========
-
 @app.route('/cadastro-terapeuta', methods=['POST'])
 def cadastro_terapeuta():
     data = request.json
@@ -194,32 +200,24 @@ def cadastro_terapeuta():
     crp = data.get("crp")
     disponibilidade = data.get("disponibilidade")
 
-    if not all([id_usuario,especialidade, crp, disponibilidade]):
+    if not all([id_usuario, especialidade, crp, disponibilidade]):
         return jsonify({"erro": "Campos obrigatórios faltando"}), 400
-
 
     conexao = get_connection()
     cursor = conexao.cursor()
-
     try:
-
-        # Inserir na tabela terapeuta - testando na tabela terapeuta...
         cursor.execute(
             "INSERT INTO terapeuta (id_usuario, especialidade, CRP, disponibilidade) VALUES (%s, %s, %s, %s)",
             (id_usuario, especialidade, crp, disponibilidade)
         )
         conexao.commit()
-
         return jsonify({"mensagem": "Terapeuta cadastrado com sucesso!"}), 201
-
     except Exception as e:
         conexao.rollback()
         return jsonify({"erro": str(e)}), 500
-
     finally:
         cursor.close()
         conexao.close()
-
 
 @app.route('/cadastro-usuario', methods=['PUT'])
 def cadastro_usuario():
@@ -229,28 +227,21 @@ def cadastro_usuario():
     endereco = data.get("endereco")
     contato_emergencia = data.get("contato_emergencia")
 
-    if not all([id_usuario,data_nascimento, endereco, contato_emergencia]):
+    if not all([id_usuario, data_nascimento, endereco, contato_emergencia]):
         return jsonify({"erro": "Campos obrigatórios faltando"}), 400
-
 
     conexao = get_connection()
     cursor = conexao.cursor()
-
     try:
-
-        # Inserir na tabela usuario - testando na tabela usuario...
         cursor.execute(
-            "UPDATE usuario SET data_nascimento = %s, endereco =  %s, contato_emergencia = %s WHERE id_usuario = %s",
+            "UPDATE usuario SET data_nascimento = %s, endereco = %s, contato_emergencia = %s WHERE id_usuario = %s",
             (data_nascimento, endereco, contato_emergencia, id_usuario)
         )
         conexao.commit()
-
         return jsonify({"mensagem": "Usuário alterado com sucesso!"}), 201
-
     except Exception as e:
         conexao.rollback()
         return jsonify({"erro": str(e)}), 500
-
     finally:
         cursor.close()
         conexao.close()
@@ -260,8 +251,6 @@ def listTerapeutas():
     conexao = get_connection()
     cursor = conexao.cursor(dictionary=True)
     especialidade = request.args.get('especialidade')
-
-    print(especialidade)
 
     if especialidade:
         query = """
@@ -284,23 +273,16 @@ def listTerapeutas():
             cursor.execute(query, (f"%{especialidade}%",))
         else:
             cursor.execute(query)
-
         terapeutas = cursor.fetchall()
 
-        return jsonify(terapeutas
-        ), 200
-
+        return jsonify(terapeutas), 200
     except Exception as e:
         conexao.rollback()
         return jsonify({"erro": str(e)}), 500
-
     finally:
         cursor.close()
         conexao.close()
 
-
-
-# ======== ROTA FAVORITOS ========
 @app.route('/favoritar', methods=['POST'])
 def favoritar_terapeuta():
     conexao = get_connection()
@@ -311,7 +293,7 @@ def favoritar_terapeuta():
         id_terapeuta = data['id_terapeuta']
     except Exception as e:
         return jsonify({"erro": "Dados inválidos: id_usuario e id_terapeuta são obrigatórios."}), 400
-    
+
     query = """
     INSERT INTO usuario_salva_terapeuta (id_usuario, id_terapeuta)
     VALUES (%s, %s)
@@ -320,24 +302,18 @@ def favoritar_terapeuta():
     try:
         cursor.execute(query, (id_usuario, id_terapeuta))
         conexao.commit()
-        
         return jsonify({"mensagem": "Terapeuta favoritado com sucesso!"}), 201
-
     except Exception as e:
         conexao.rollback()
         return jsonify({"erro": f"Erro ao favoritar terapeuta: {str(e)}"}), 500
-
     finally:
         cursor.close()
         conexao.close()
 
-# ======== ROTA PARA LISTAR TERAPEUTAS =======
 @app.route('/usuarios/<int:id_usuario>/terapeutas', methods=['GET'])
 def listar_terapeutas_por_usuario(id_usuario):
     conexao = get_connection()
     cursor = conexao.cursor(dictionary=True)
-    
-    # Query de listagem
     query = """
     SELECT 
         u.id_usuario, 
@@ -355,27 +331,20 @@ def listar_terapeutas_por_usuario(id_usuario):
     WHERE 
         ust.id_usuario = %s
     """
-    
     try:
         cursor.execute(query, (id_usuario,))
         terapeutas_favoritos = cursor.fetchall()
-        
         return jsonify(terapeutas_favoritos), 200
-
     except Exception as e:
         return jsonify({"erro": f"Erro ao listar terapeutas favoritos: {str(e)}"}), 500
-
     finally:
         cursor.close()
         conexao.close()
-    
-# ======== ROTA PARA LISTAR USUÁRIOS POR TERAPEUTAS ========
+
 @app.route('/terapeutas/<int:id_terapeuta>/usuarios', methods=['GET'])
 def listar_usuarios_por_terapeuta(id_terapeuta):
     conexao = get_connection()
     cursor = conexao.cursor(dictionary=True)
-    
-    # Query de listagem
     query = """
     SELECT 
         u.id_usuario, 
@@ -388,19 +357,16 @@ def listar_usuarios_por_terapeuta(id_terapeuta):
     WHERE 
         ust.id_terapeuta = %s
     """
-    
     try:
         cursor.execute(query, (id_terapeuta,))
         usuarios_que_favoritaram = cursor.fetchall()
-        
         return jsonify(usuarios_que_favoritaram), 200
-
     except Exception as e:
         return jsonify({"erro": f"Erro ao listar usuários que favoritaram: {str(e)}"}), 500
-
     finally:
         cursor.close()
         conexao.close()
+
 # ======== EXECUTAR API ==========
 if __name__ == "__main__":
     app.run(debug=True)
