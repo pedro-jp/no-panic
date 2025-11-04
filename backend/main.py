@@ -359,7 +359,7 @@ def listar_terapeutas_por_usuario(id_usuario):
         cursor.execute(query, (id_usuario,))
         terapeutas_favoritos = cursor.fetchall()
         
-        return jsonify({"terapeutas": terapeutas_favoritos}), 200
+        return jsonify(terapeutas_favoritos), 200
 
     except Exception as e:
         return jsonify({"erro": f"Erro ao listar terapeutas favoritos: {str(e)}"}), 500
@@ -392,7 +392,7 @@ def listar_usuarios_por_terapeuta(id_terapeuta):
         cursor.execute(query, (id_terapeuta,))
         usuarios_que_favoritaram = cursor.fetchall()
         
-        return jsonify({"usuarios": usuarios_que_favoritaram}), 200
+        return jsonify(usuarios_que_favoritaram), 200
 
     except Exception as e:
         return jsonify({"erro": f"Erro ao listar usuários que favoritaram: {str(e)}"}), 500
