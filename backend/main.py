@@ -96,7 +96,7 @@ def login():
                 "cpf": usuario["cpf"],
                 "primeiro_login": usuario["primeiro_login"]
             }
-            return jsonify({"usuario": newUsuario}), 200
+            return jsonify(newUsuario), 200
         else:
             return jsonify({"erro": "Senha incorreta"}), 401
     except Exception as e:
@@ -148,7 +148,7 @@ def loadUser():
                 "disponibilidade": usuario["disponibilidade"]
             }
 
-        return jsonify({"usuario": newUsuario}), 200
+        return jsonify(newUsuario), 200
 
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
@@ -287,9 +287,8 @@ def listTerapeutas():
 
         terapeutas = cursor.fetchall()
 
-        return jsonify({
-            "terapeutas": terapeutas
-        }), 200
+        return jsonify(terapeutas
+        ), 200
 
     except Exception as e:
         conexao.rollback()
