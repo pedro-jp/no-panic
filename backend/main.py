@@ -32,7 +32,7 @@ dbconfig = {
 
 connection_pool = pooling.MySQLConnectionPool(
     pool_name="main_pool",
-    pool_size=8,  # ajusta conforme a carga do servidor
+    pool_size=32,  # ajusta conforme a carga do servidor
     pool_reset_session=True,
     **dbconfig
 )
