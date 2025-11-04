@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import styles from './styles.module.css';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/ui/header';
@@ -8,6 +8,7 @@ import { Container } from '@/components/ui/container';
 import { Content } from '@/components/ui/content';
 import axios from 'axios';
 import { AuthProvider, useAuth } from '@/context/auth-context';
+import { GridLoader } from 'react-spinners';
 
 interface Terapeuta {
   nome: string;
@@ -64,6 +65,7 @@ export default function Page() {
 const Favoritos = () => {
   const { user } = useAuth();
   const [favoritos, setFavoritos] = React.useState<Terapeuta[]>();
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -71,6 +73,7 @@ const Favoritos = () => {
   }, [user]);
 
   const getFavoritos = async () => {
+    setLoading(true);
     try {
       const { data } = await axios.get(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/usuarios/${user?.id}/terapeutas`
@@ -78,9 +81,19 @@ const Favoritos = () => {
       setFavoritos(data);
       console.log(favoritos);
     } catch (e) {
-      console.log(e);
+    } finally {
+      setLoading(false);
     }
   };
+
+  if (loading)
+    return (
+      loading && (
+        <div className={styles.loading}>
+          <GridLoader color='purple' />
+        </div>
+      )
+    );
 
   return favoritos && favoritos.length === 0 ? (
     <div className={styles.emptyState}>

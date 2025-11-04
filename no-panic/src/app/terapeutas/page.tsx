@@ -7,6 +7,7 @@ import styles from './styles.module.css';
 import { Card } from '@/components/card';
 import axios from 'axios';
 import { AuthProvider, useAuth } from '@/context/auth-context';
+import { GridLoader } from 'react-spinners';
 
 export interface Terapeuta {
   nome: string;
@@ -25,6 +26,7 @@ const PageContent = () => {
 
   // Buscar terapeutas
   const fetchTerapeutas = async () => {
+    setLoading(true);
     try {
       const url = especialidade
         ? `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas?especialidade=${especialidade}`
@@ -33,13 +35,14 @@ const PageContent = () => {
       setTerapeutas(res.data);
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
   // Buscar favoritos do usuário
   const fetchFavoritos = async () => {
     if (!user) return;
-    setLoading(true);
     try {
       const { data } = await axios.get(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/usuarios/${user.id}/terapeutas`
@@ -48,7 +51,6 @@ const PageContent = () => {
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
     }
   };
 
@@ -90,16 +92,22 @@ const PageContent = () => {
               onChange={(e) => setEspecialidade(e.target.value)}
             />
             <div className={styles.card_container}>
-              {terapeutas
-                .filter((t) => t.CRP)
-                .map((terapeuta) => (
-                  <Card
-                    key={terapeuta.id_usuario}
-                    terapeuta={terapeuta}
-                    favoritos={favoritos}
-                    onFavoritar={() => handleFavoritar(terapeuta)}
-                  />
-                ))}
+              {loading && (
+                <div className={styles.loading}>
+                  <GridLoader color='purple' />
+                </div>
+              )}
+              {!loading &&
+                terapeutas
+                  .filter((t) => t.CRP)
+                  .map((terapeuta) => (
+                    <Card
+                      key={terapeuta.id_usuario}
+                      terapeuta={terapeuta}
+                      favoritos={favoritos}
+                      onFavoritar={() => handleFavoritar(terapeuta)}
+                    />
+                  ))}
             </div>
           </main>
         </Content>
