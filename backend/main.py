@@ -343,7 +343,9 @@ def listar_terapeutas_por_usuario(id_usuario):
         u.id_usuario, 
         u.nome, 
         u.email, 
-        t.especialidade
+        t.especialidade,
+        t.disponibilidade,
+        t.CRP
     FROM 
         usuario_salva_terapeuta ust
     JOIN 
