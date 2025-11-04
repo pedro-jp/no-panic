@@ -3,7 +3,7 @@ import { setCookie, getCookie, deleteCookie } from 'cookies-next';
 
 // ===== Tipagem =====
 interface User {
-  id_usuario: string;
+  id: number;
   nome: string;
   email: string;
   cpf: string;
