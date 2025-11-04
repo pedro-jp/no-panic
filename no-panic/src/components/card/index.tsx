@@ -1,6 +1,5 @@
 'use client';
-
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import styles from './styles.module.css';
 import { FiClock } from 'react-icons/fi';
 import { IoStar } from 'react-icons/io5';
@@ -13,58 +12,41 @@ import { toast } from 'react-toastify';
 
 type Prop = {
   terapeuta: Terapeuta;
+  favoritos: Terapeuta[];
+  onFavoritar: () => void;
 };
 
-export const Card = ({ terapeuta }: Prop) => {
-  const [favoritos, setFavoritos] = useState<Terapeuta[]>();
+export const Card = ({ terapeuta, favoritos, onFavoritar }: Prop) => {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
 
-  useEffect(() => {
-    getFavoritos();
-  }, [user]);
-
-  const getFavoritos = async () => {
-    setLoading(true);
-    try {
-      const { data } = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URL}/usuarios/${user?.id}/terapeutas`
-      );
-      setFavoritos(data);
-    } catch (e) {
-      console.log(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const favoritarTerapeuta = async (
-    id_usuario: number | undefined,
-    id_terapeuta: number | undefined
-  ) => {
-    if (!id_usuario || !id_terapeuta)
-      return toast.error('Selecione um terapeuta');
+  const favoritarTerapeuta = async () => {
+    if (!user) return toast.error('Usuário não logado');
     setLoading(true);
     try {
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/favoritar`,
         {
-          id_usuario,
-          id_terapeuta,
+          id_usuario: user.id,
+          id_terapeuta: terapeuta.id_usuario,
         }
       );
       if (res.status === 201) {
         toast.success('Favoritado');
-        setFavoritos((prevFavoritos) => [...(prevFavoritos ?? []), terapeuta]);
+        onFavoritar();
+      } else {
+        toast.error('Erro ao favoritar');
       }
-      if (res.status === 400) {
-        toast.success('Erro ao favoritar');
-      }
-    } catch (error) {
+    } catch (err) {
+      toast.error('Erro ao favoritar');
     } finally {
       setLoading(false);
     }
   };
+
+  const jaFavoritado = favoritos.some(
+    (f) => f.id_usuario === terapeuta.id_usuario
+  );
 
   return (
     <div className={styles.card}>
@@ -75,7 +57,7 @@ export const Card = ({ terapeuta }: Prop) => {
             {terapeuta.nome.split(' ')[0]}{' '}
             {terapeuta.nome.split(' ')[terapeuta.nome.split(' ').length - 1]}
           </h4>
-          <p title='CRP do profissional'>{terapeuta.CRP} </p>
+          <p title='CRP do profissional'>{terapeuta.CRP}</p>
         </div>
       </div>
       <div className={styles.info}>
@@ -92,23 +74,14 @@ export const Card = ({ terapeuta }: Prop) => {
           <span>120 sessões</span>
         </p>
       </div>
-      {favoritos &&
-      favoritos.some(
-        (favorito) => favorito.id_usuario === terapeuta.id_usuario
-      ) ? (
-        <Button
-          disabled={loading}
-          onClick={() => {
-            toast.warn('Já favoritado');
-          }}
-          style={{ cursor: 'not-allowed', paddingBlock: '.5rem' }}
-        >
+      {jaFavoritado ? (
+        <Button style={{ cursor: 'not-allowed', paddingBlock: '.5rem' }}>
           <BiCheck />
         </Button>
       ) : (
         <Button
           disabled={loading}
-          onClick={() => favoritarTerapeuta(user?.id, terapeuta?.id_usuario)}
+          onClick={favoritarTerapeuta}
           style={{ paddingBlock: '.5rem' }}
         >
           Favoritar

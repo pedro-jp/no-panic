@@ -2,16 +2,11 @@
 import { Container } from '@/components/ui/container';
 import { Content } from '@/components/ui/content';
 import { Header } from '@/components/ui/header';
-// import { Metadata } from 'next';
 import React, { useEffect, useState } from 'react';
 import styles from './styles.module.css';
 import { Card } from '@/components/card';
 import axios from 'axios';
-import { AuthProvider } from '@/context/auth-context';
-
-// export const metadata: Metadata = {
-//   title: 'Terapeutas | NoPanic',
-// };
+import { AuthProvider, useAuth } from '@/context/auth-context';
 
 export interface Terapeuta {
   nome: string;
@@ -21,41 +16,61 @@ export interface Terapeuta {
   disponibilidade: string;
 }
 
-const Page = () => {
-  const [terapeutas, setTerapeutas] = useState<Terapeuta[]>();
-  const [especialidade, setEspecialidade] = useState<string>('');
+const PageContent = () => {
+  const { user } = useAuth();
+  const [terapeutas, setTerapeutas] = useState<Terapeuta[]>([]);
+  const [especialidade, setEspecialidade] = useState('');
+  const [favoritos, setFavoritos] = useState<Terapeuta[]>([]);
+  const [loading, setLoading] = useState(false);
 
+  // Buscar terapeutas
   const fetchTerapeutas = async () => {
-    if (especialidade) {
-      try {
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas?especialidade=${especialidade}`
-        );
-        const terapeutasData = response.data;
-        return await terapeutasData;
-      } catch (error) {
-        console.log(error);
-      }
-    }
-
     try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas`
-      );
-      const terapeutasData = response.data;
-      return await terapeutasData;
-    } catch (error) {
-      console.log(error);
+      const url = especialidade
+        ? `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas?especialidade=${especialidade}`
+        : `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas`;
+      const res = await axios.get(url);
+      setTerapeutas(res.data);
+    } catch (err) {
+      console.error(err);
     }
   };
 
+  // Buscar favoritos do usuário
+  const fetchFavoritos = async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const { data } = await axios.get(
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/usuarios/${user.id}/terapeutas`
+      );
+      setFavoritos(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Favoritar um terapeuta
+  const handleFavoritar = (novoFavorito: Terapeuta) => {
+    setFavoritos((prev) => [...prev, novoFavorito]);
+  };
+
+  // Effects
   useEffect(() => {
-    const fetchData = async () => {
-      const terapeutas = await fetchTerapeutas();
-      setTerapeutas(terapeutas!);
-    };
-    fetchData();
+    fetchFavoritos();
+  }, [user]);
+
+  // Debounce simples para filtro
+  useEffect(() => {
+    const timer = setTimeout(fetchTerapeutas, 300);
+    return () => clearTimeout(timer);
   }, [especialidade]);
+
+  useEffect(() => {
+    fetchTerapeutas();
+  }, []);
 
   return (
     <>
@@ -74,20 +89,29 @@ const Page = () => {
               value={especialidade}
               onChange={(e) => setEspecialidade(e.target.value)}
             />
-            <AuthProvider>
-              <div className={styles.card_container}>
-                {terapeutas
-                  ?.filter((terapeuta) => terapeuta.CRP)
-                  .map((terapeuta) => (
-                    <Card key={terapeuta.id_usuario} terapeuta={terapeuta} />
-                  ))}
-              </div>
-            </AuthProvider>
+            <div className={styles.card_container}>
+              {terapeutas
+                .filter((t) => t.CRP)
+                .map((terapeuta) => (
+                  <Card
+                    key={terapeuta.id_usuario}
+                    terapeuta={terapeuta}
+                    favoritos={favoritos}
+                    onFavoritar={() => handleFavoritar(terapeuta)}
+                  />
+                ))}
+            </div>
           </main>
         </Content>
       </Container>
     </>
   );
 };
+
+const Page = () => (
+  <AuthProvider>
+    <PageContent />
+  </AuthProvider>
+);
 
 export default Page;

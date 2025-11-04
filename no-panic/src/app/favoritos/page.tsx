@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import styles from './styles.module.css';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/ui/header';
@@ -65,7 +65,8 @@ const Favoritos = () => {
   const { user } = useAuth();
   const [favoritos, setFavoritos] = React.useState<Terapeuta[]>();
 
-  React.useEffect(() => {
+  useEffect(() => {
+    if (!user) return;
     getFavoritos();
   }, [user]);
 
