@@ -31,9 +31,7 @@ const Page = () => {
           `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas?especialidade=${especialidade}`
         );
         const terapeutasData = response.data;
-        console.log(terapeutasData);
-        console.log(terapeutasData.terapeutas);
-        return await terapeutasData.terapeutas;
+        return await terapeutasData;
       } catch (error) {
         console.log(error);
       }
@@ -44,9 +42,7 @@ const Page = () => {
         `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas`
       );
       const terapeutasData = response.data;
-      console.log(terapeutasData);
-      console.log(terapeutasData.terapeutas);
-      return await terapeutasData.terapeutas;
+      return await terapeutasData;
     } catch (error) {
       console.log(error);
     }

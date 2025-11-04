@@ -102,7 +102,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const err = await response.text();
         throw new Error(err || 'Erro ao entrar');
       }
-      const { usuario } = await response.json();
+      const usuario = await response.json();
       setCookie('user', JSON.stringify(usuario), { maxAge: 60 * 60 * 24 * 7 }); // 7 dias
       setUser(user);
       window.location.href = '/terapeutas';
@@ -134,7 +134,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const err = await response.text();
         throw new Error(err || 'Erro ao entrar');
       }
-      const { usuario } = await response.json();
+      const usuario = await response.json();
       setCookie('user', JSON.stringify(usuario), { maxAge: 60 * 60 * 24 * 7 }); // 7 dias
       setUser(user);
     } catch (err) {

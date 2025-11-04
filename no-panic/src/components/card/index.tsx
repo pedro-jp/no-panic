@@ -21,7 +21,10 @@ export const Card = ({ terapeuta }: Prop) => {
       />
 
       <div className={styles.info}>
-        <h4>{terapeuta.nome}</h4>
+        <h4>
+          {terapeuta.nome.split(' ')[0]}{' '}
+          {terapeuta.nome.split(' ')[terapeuta.nome.split(' ').length - 1]}
+        </h4>
         <p>{terapeuta.CRP} </p>
       </div>
       <div className={styles.info}>
@@ -38,7 +41,7 @@ export const Card = ({ terapeuta }: Prop) => {
           <span>120 sessões</span>
         </p>
       </div>
-      <Button style={{ paddingBlock: '.5rem' }}>Agendar Sessão</Button>
+      <Button style={{ paddingBlock: '.5rem' }}>Favoritar</Button>
     </div>
   );
 };
