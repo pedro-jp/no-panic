@@ -75,7 +75,10 @@ export const Card = ({ terapeuta, favoritos, onFavoritar }: Prop) => {
         </p>
       </div>
       {jaFavoritado ? (
-        <Button style={{ cursor: 'not-allowed', paddingBlock: '.5rem' }}>
+        <Button
+          onClick={() => toast.info('Já favoritado')}
+          style={{ cursor: 'not-allowed', paddingBlock: '.5rem' }}
+        >
           <BiCheck />
         </Button>
       ) : (
