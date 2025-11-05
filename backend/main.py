@@ -367,6 +367,31 @@ def listar_usuarios_por_terapeuta(id_terapeuta):
         cursor.close()
         conexao.close()
 
+@app.route('/atualizar-usuario', methods=['PUT'])
+def listar_usuarios_por_terapeuta(id_terapeuta):
+    conexao = get_connection()
+    cursor = conexao.cursor(dictionary=True)
+    query = """
+    SELECT 
+        u.id_usuario, 
+        u.nome, 
+        u.email
+    FROM 
+        usuario_salva_terapeuta ust
+    JOIN 
+        usuario u ON ust.id_usuario = u.id_usuario
+    WHERE 
+        ust.id_terapeuta = %s
+    """
+    try:
+        cursor.execute(query, (id_terapeuta,))
+        usuarios_que_favoritaram = cursor.fetchall()
+        return jsonify(usuarios_que_favoritaram), 200
+    except Exception as e:
+        return jsonify({"erro": f"Erro ao listar usuários que favoritaram: {str(e)}"}), 500
+    finally:
+        cursor.close()
+        conexao.close()
 # ======== EXECUTAR API ==========
 if __name__ == "__main__":
     app.run(debug=True)
