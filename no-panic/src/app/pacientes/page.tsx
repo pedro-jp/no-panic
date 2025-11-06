@@ -7,7 +7,7 @@ import { Header } from '@/components/ui/header';
 import { Container } from '@/components/ui/container';
 import { Content } from '@/components/ui/content';
 import axios from 'axios';
-import { AuthProvider, useAuth } from '@/context/auth-context';
+import { AuthProvider, useAuth, User } from '@/context/auth-context';
 import { GridLoader } from 'react-spinners';
 
 interface Terapeuta {
@@ -47,13 +47,11 @@ export default function Page() {
           <AuthProvider>
             <main className={styles.main}>
               <div className={styles.pageHeader}>
-                <h2 className={styles.title}>Meus Favoritos</h2>
-                <p className={styles.subtitle}>
-                  Terapeutas salvos para acesso rápido
-                </p>
+                <h2 className={styles.title}>Meus Pacientes</h2>
+                <p className={styles.subtitle}>Pacientes salvos</p>
               </div>
 
-              <Favoritos />
+              <Pacientes />
             </main>
           </AuthProvider>
         </Content>
@@ -62,24 +60,24 @@ export default function Page() {
   );
 }
 
-const Favoritos = () => {
+const Pacientes = () => {
   const { user } = useAuth();
-  const [favoritos, setFavoritos] = React.useState<Terapeuta[]>();
+  const [pacientes, setPacientes] = useState<User[]>();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
-    getFavoritos();
+    getPacientes();
   }, [user]);
 
-  const getFavoritos = async () => {
+  const getPacientes = async () => {
     setLoading(true);
     try {
       const { data } = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URL}/usuarios/${user?.id}/terapeutas`
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeuta/${user?.id}/usuarios`
       );
-      setFavoritos(data);
-      console.log(favoritos);
+      setPacientes(data);
+      console.log(pacientes);
     } catch (e) {
     } finally {
       setLoading(false);
@@ -95,7 +93,7 @@ const Favoritos = () => {
       )
     );
 
-  return favoritos && favoritos.length === 0 ? (
+  return pacientes && pacientes.length === 0 ? (
     <div className={styles.emptyState}>
       <div className={styles.emptyIcon}>
         <svg
@@ -117,41 +115,26 @@ const Favoritos = () => {
     </div>
   ) : (
     <div className={styles.grid}>
-      {favoritos &&
-        favoritos.map((fav) => (
-          <div key={fav.id_usuario} className={styles.card}>
+      {pacientes &&
+        pacientes.map((paciente) => (
+          <div key={paciente.id} className={styles.card}>
             <div className={styles.cardHeader}>
               <div className={styles.avatar}>
-                <span>{fav.nome.charAt(0).toUpperCase()}</span>
+                <span>{paciente.nome.charAt(0).toUpperCase()}</span>
               </div>
-              <button
-                // onClick={() => handleRemove(fav.id_usuario)}
-                className={styles.favoriteBtn}
-                title='Remover dos favoritos'
-              >
-                <svg
-                  width='20'
-                  height='20'
-                  viewBox='0 0 24 24'
-                  fill='currentColor'
-                >
-                  <path d='M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z' />
-                </svg>
-              </button>
             </div>
-
             <div className={styles.cardBody}>
               <h3 className={styles.cardTitle}>
-                {fav.nome.split(' ')[0]}{' '}
-                {fav.nome.split(' ')[fav.nome.split(' ').length - 1]}{' '}
-                <span>{fav.disponibilidade}</span>
+                {paciente.nome.split(' ')[0]}{' '}
+                {paciente.nome.split(' ')[paciente.nome.split(' ').length - 1]}{' '}
+                <span>{paciente.cpf}</span>
               </h3>
-              <p className={styles.cardId}>{fav.especialidade}</p>
+              <p className={styles.cardId}>{paciente.email}</p>
             </div>
 
             <div className={styles.cardActions}>
               <button
-                // onClick={() => handleCall(fav.id_usuario)}
+                // onClick={() => handleCall(paciente.id_usuario)}
                 className={styles.btnPrimary}
               >
                 <svg
@@ -168,7 +151,7 @@ const Favoritos = () => {
                 <span>Ligar</span>
               </button>
               <button
-                //  onClick={() => handleChat(fav.id_usuario)}
+                //  onClick={() => handleChat(paciente.id_usuario)}
                 className={styles.btnSecondary}
               >
                 <svg
@@ -182,25 +165,6 @@ const Favoritos = () => {
                   <path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' />
                 </svg>
                 <span>Chat</span>
-              </button>
-              <button
-                // onClick={() => handleSchedule(fav.id_usuario)}
-                className={styles.btnSecondary}
-              >
-                <svg
-                  width='18'
-                  height='18'
-                  viewBox='0 0 24 24'
-                  fill='none'
-                  stroke='currentColor'
-                  strokeWidth='2'
-                >
-                  <rect x='3' y='4' width='18' height='18' rx='2' ry='2' />
-                  <line x1='16' y1='2' x2='16' y2='6' />
-                  <line x1='8' y1='2' x2='8' y2='6' />
-                  <line x1='3' y1='10' x2='21' y2='10' />
-                </svg>
-                <span>Agendar</span>
               </button>
             </div>
           </div>

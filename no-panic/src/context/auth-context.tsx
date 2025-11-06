@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useContext, ReactNode } from 'react';
 import { setCookie, getCookie, deleteCookie } from 'cookies-next';
+import { Terapeuta } from '@/app/terapeutas/page';
 
 // ===== Tipagem =====
-interface User {
+export interface User {
   id: number;
   nome: string;
   email: string;
   cpf: string;
+  terapeuta: Terapeuta;
 }
 
 interface AuthContextType {

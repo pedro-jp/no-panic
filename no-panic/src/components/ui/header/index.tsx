@@ -5,8 +5,10 @@ import styles from './styles.module.css';
 import Image from 'next/image';
 import Link from 'next/link';
 import { IoClose, IoHeart, IoMenu } from 'react-icons/io5';
+import { AuthProvider, useAuth } from '@/context/auth-context';
 
-export const Header = () => {
+export const HeaderComponent = () => {
+  const { user } = useAuth();
   return (
     <header className={styles.header}>
       <menu>
@@ -23,9 +25,15 @@ export const Header = () => {
           <li>
             <Link href='/terapeutas'>Terapeutas</Link>
           </li>
-          <li>
-            <Link href='/favoritos'>Favoritos</Link>
-          </li>
+          {user?.terapeuta.CRP ? (
+            <li>
+              <Link href='/pacientes'>Pacientes</Link>
+            </li>
+          ) : (
+            <li>
+              <Link href='/favoritos'>Favoritos</Link>
+            </li>
+          )}
           <li>
             <Link
               href='/sessoes
@@ -78,3 +86,11 @@ export const Header = () => {
     </header>
   );
 };
+
+export function Header() {
+  return (
+    <AuthProvider>
+      <HeaderComponent />
+    </AuthProvider>
+  );
+}
