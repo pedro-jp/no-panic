@@ -1,118 +1,113 @@
 'use client';
 
-import { useRef, useMemo } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import {
-  OrbitControls,
-  Sphere,
-  Box,
-  Torus,
-  MeshDistortMaterial,
-  Environment,
-} from '@react-three/drei';
-import type * as THREE from 'three';
+import { OrbitControls, Environment, useGLTF } from '@react-three/drei';
+import * as THREE from 'three';
 
-function FloatingShape({
-  position,
-  geometry,
+function Model({
+  scrollDepth,
   color,
-  speed = 1,
+  model,
+  initialZ = -100, // posição inicial padrão
+  initialY,
 }: {
-  position: [number, number, number];
-  geometry: 'sphere' | 'box' | 'torus';
+  scrollDepth: number;
   color: string;
-  speed?: number;
+  model: string;
+  initialZ?: number;
+  initialY?: number;
 }) {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const meshRef = useRef<THREE.Group>(null);
+  const { scene } = useGLTF(model);
 
-  useFrame((state) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.x = state.clock.elapsedTime * speed * 0.3;
-      meshRef.current.rotation.y = state.clock.elapsedTime * speed * 0.2;
-      meshRef.current.position.y =
-        position[1] + Math.sin(state.clock.elapsedTime * speed) * 0.5;
+  // Aplica material customizado
+  scene.traverse((child: any) => {
+    if (child.isMesh) {
+      child.material = new THREE.MeshPhysicalMaterial({
+        color,
+        roughness: 0.1,
+        metalness: 0.3,
+        reflectivity: 1,
+        clearcoat: 1,
+        clearcoatRoughness: 0.1,
+        // emissive: new THREE.Color(color),
+        // emissiveIntensity: 0.3,
+      });
     }
   });
 
-  const GeometryComponent = useMemo(() => {
-    switch (geometry) {
-      case 'sphere':
-        return (
-          <Sphere args={[1, 64, 64]} ref={meshRef}>
-            <MeshDistortMaterial
-              color={color}
-              speed={2}
-              distort={0.3}
-              radius={1}
-            />
-          </Sphere>
-        );
-      case 'box':
-        return (
-          <Box args={[1.5, 1.5, 1.5]} ref={meshRef}>
-            <meshStandardMaterial
-              color={color}
-              metalness={0.5}
-              roughness={0.2}
-            />
-          </Box>
-        );
-      case 'torus':
-        return (
-          <Torus args={[1, 0.4, 16, 100]} ref={meshRef}>
-            <meshStandardMaterial
-              color={color}
-              metalness={0.7}
-              roughness={0.3}
-            />
-          </Torus>
-        );
+  // Anima a rotação e a profundidade com base no scroll
+  useFrame(() => {
+    if (meshRef.current) {
+      //   meshRef.current.rotation.y += 0.002;
+      meshRef.current.position.z = initialZ + scrollDepth * 150;
     }
-  }, [geometry, color]);
+  });
 
-  return <group position={position}>{GeometryComponent}</group>;
+  return (
+    <group ref={meshRef} scale={[0.1, 0.1, 0.1]}>
+      <primitive object={scene.clone()} />
+    </group>
+  );
 }
 
-export function Scene3D({ scrollProgress }: { scrollProgress: number }) {
+export function Scene3D() {
+  const [scroll, setScroll] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const progress =
+        window.scrollY / (document.body.scrollHeight - window.innerHeight);
+      setScroll(progress);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
-    <Canvas camera={{ position: [0, 0, 8], fov: 50 }}>
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[10, 10, 5]} intensity={1} />
-      <pointLight position={[-10, -10, -5]} intensity={0.5} color='#6366f1' />
+    <Canvas
+      style={{ position: 'absolute', inset: 0, height: '100%' }}
+      camera={{ position: [0, 5, 25], fov: 50 }}
+      gl={{ toneMapping: THREE.ACESFilmicToneMapping }}
+    >
+      <ambientLight intensity={1.2} />
+      <directionalLight position={[10, 10, 10]} intensity={2.5} color='white' />
 
-      <Environment preset='city' />
-
-      <FloatingShape
-        position={[-3, 2, 0]}
-        geometry='sphere'
-        color='#6366f1'
-        speed={0.8}
-      />
-      <FloatingShape
-        position={[3, -1, -2]}
-        geometry='box'
-        color='#8b5cf6'
-        speed={1.2}
-      />
-      <FloatingShape
-        position={[0, -2, -1]}
-        geometry='torus'
-        color='#a78bfa'
-        speed={1}
-      />
-      <FloatingShape
-        position={[-2, -3, -3]}
-        geometry='sphere'
-        color='#c084fc'
-        speed={0.6}
+      <Environment
+        files='https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/studio_small_03_1k.hdr'
+        background={false}
       />
 
-      <OrbitControls
-        enableZoom={false}
-        enablePan={false}
-        autoRotate
-        autoRotateSpeed={0.5}
+      {/* Primeiro cérebro (normal) */}
+      <Model
+        scrollDepth={scroll}
+        color='#ff69b4'
+        model='/3d/brain.glb'
+        initialZ={-100}
+        initialY={0}
       />
+
+      {/* Segundo mais ao fundo */}
+      <Model
+        scrollDepth={scroll}
+        color='transparent'
+        model='/3d/brain2.glb'
+        initialZ={-270}
+      />
+
+      {/* <Model
+        scrollDepth={scroll}
+        color='red'
+        model='/3d/brain.glb'
+        initialZ={-270}
+        initialY={-200}
+      /> */}
+
+      <OrbitControls enableZoom={false} enablePan={false} enableRotate={true} />
     </Canvas>
   );
 }
+
+useGLTF.preload('/3d/brain.glb');
+useGLTF.preload('/3d/brain2.glb');
