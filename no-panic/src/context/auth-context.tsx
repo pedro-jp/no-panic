@@ -10,6 +10,7 @@ export interface User {
   email: string;
   cpf: string;
   terapeuta: Terapeuta;
+  primeiro_login: boolean;
 }
 
 interface AuthContextType {
