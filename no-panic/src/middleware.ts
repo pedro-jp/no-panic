@@ -9,7 +9,6 @@ export function middleware(request: NextRequest) {
   const privatePaths = [
     '/terapeutas',
     '/perfil',
-    '/configuracoes',
     '/favoritos',
     '/pacientes',
     '/chamada',
@@ -43,7 +42,6 @@ export const config = {
     '/cadastro',
     '/terapeutas/:path*',
     '/perfil/:path*',
-    '/configuracoes/:path*',
     '/favoritos/:path*',
     '/pacientes/:path*',
     '/chamada/:path*',
