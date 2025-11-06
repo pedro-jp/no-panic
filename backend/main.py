@@ -15,6 +15,8 @@ DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_NAME = os.getenv("DB_NAME")
 DB_PORT = os.getenv("DB_PORT")
 
+POOL_SIZE = int(os.getenv("POOL_SIZE"))
+
 app = Flask(__name__)
 CORS(app)
 
@@ -32,7 +34,7 @@ dbconfig = {
 
 connection_pool = pooling.MySQLConnectionPool(
     pool_name="main_pool",
-    pool_size=5,  # ajusta conforme a carga do servidor
+    pool_size=POOL_SIZE,  # ajusta conforme a carga do servidor
     pool_reset_session=True,
     **dbconfig
 )
