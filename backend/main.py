@@ -367,28 +367,52 @@ def listar_usuarios_por_terapeuta(id_terapeuta):
         cursor.close()
         conexao.close()
 
-@app.route('/atualizar-usuario', methods=['PUT'])
-def listar_usuarios_por_terapeuta(id_terapeuta):
+@app.route('/atualizar-usuario/<int:id_usuario>', methods=['PUT'])
+def atualizar_usuario (id_usuario):
+    data = request.json
+    set_clauses = []
+    params = [] 
+    dados = {
+    "nome": data.get("nome"),
+    "email": data.get("email"),
+    "data_nascimento": data.get("data_nascimento"),
+    "endereco": data.get("endereco"),
+    "contato_emergencia": data.get("contato_emergencia")
+    }
+    senha = data.get("senha")
+    for dado, valor in dados.items():
+        if valor is not None:
+            set_clauses.append(f"{dado} = %s")
+            params.append(valor)
+    if senha:
+        try:
+            senha_hash = bcrypt.hashpw(senha.encode('utf-8'), bcrypt.gensalt())
+            set_clauses.append("senha = %s") 
+            params.append(senha_hash.decode('utf-8'))
+        except NameError:
+            return jsonify({"erro": "Biblioteca 'bcrypt' não importada ou não instalada."}), 500
+    if not set_clauses:
+        return jsonify({"mensagem": "Nenhum dado fornecido para atualização."}), 400
+    atualizacao = ",".join(set_clauses)
+    query = f"""
+    UPDATE 
+        usuario 
+    SET 
+        {atualizacao} 
+    WHERE 
+        id_usuario = %s
+    """
+    params.append(id_usuario)
     conexao = get_connection()
     cursor = conexao.cursor(dictionary=True)
-    query = """
-    SELECT 
-        u.id_usuario, 
-        u.nome, 
-        u.email
-    FROM 
-        usuario_salva_terapeuta ust
-    JOIN 
-        usuario u ON ust.id_usuario = u.id_usuario
-    WHERE 
-        ust.id_terapeuta = %s
-    """
     try:
-        cursor.execute(query, (id_terapeuta,))
-        usuarios_que_favoritaram = cursor.fetchall()
-        return jsonify(usuarios_que_favoritaram), 200
+       cursor.execute (query, (params + [id_usuario]))
+       conexao.commit()
+       if cursor.rowcount == 0:
+           return jsonify({'erro': 'Usuário não encontrado'}), 404
+       return jsonify({'mensagem': 'Usuário atualizado com sucesso!'}),200
     except Exception as e:
-        return jsonify({"erro": f"Erro ao listar usuários que favoritaram: {str(e)}"}), 500
+        return jsonify({'erro': f'Erro ao atualizar usuário: {str(e)}'},500)
     finally:
         cursor.close()
         conexao.close()
