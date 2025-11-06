@@ -25,7 +25,7 @@ export const HeaderComponent = () => {
           <li>
             <Link href='/terapeutas'>Terapeutas</Link>
           </li>
-          {user?.terapeuta.CRP ? (
+          {user?.terapeuta?.CRP ? (
             <li>
               <Link href='/pacientes'>Pacientes</Link>
             </li>
