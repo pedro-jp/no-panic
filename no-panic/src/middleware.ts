@@ -6,7 +6,13 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const publicPaths = ['/', '/entrar', '/cadastro'];
-  const privatePaths = ['/terapeutas', '/perfil', '/configuracoes'];
+  const privatePaths = [
+    '/terapeutas',
+    '/perfil',
+    '/favoritos',
+    '/pacientes',
+    '/chamada',
+  ];
 
   // ======== USUÁRIO LOGADO ========
   if (userCookie) {
@@ -36,6 +42,8 @@ export const config = {
     '/cadastro',
     '/terapeutas/:path*',
     '/perfil/:path*',
-    '/configuracoes/:path*',
+    '/favoritos/:path*',
+    '/pacientes/:path*',
+    '/chamada/:path*',
   ],
 };

@@ -47,7 +47,7 @@ export default function Page() {
           <AuthProvider>
             <main className={styles.main}>
               <div className={styles.pageHeader}>
-                <h1 className={styles.title}>Meus Favoritos</h1>
+                <h2 className={styles.title}>Meus Favoritos</h2>
                 <p className={styles.subtitle}>
                   Terapeutas salvos para acesso rápido
                 </p>
@@ -66,6 +66,7 @@ const Favoritos = () => {
   const { user } = useAuth();
   const [favoritos, setFavoritos] = React.useState<Terapeuta[]>();
   const [loading, setLoading] = useState(false);
+  const isSessionClose = false;
 
   useEffect(() => {
     if (!user) return;
@@ -151,6 +152,10 @@ const Favoritos = () => {
 
             <div className={styles.cardActions}>
               <button
+                style={{
+                  cursor: isSessionClose ? 'pointer' : 'not-allowed',
+                  opacity: isSessionClose ? '1' : '.5',
+                }}
                 // onClick={() => handleCall(fav.id_usuario)}
                 className={styles.btnPrimary}
               >
