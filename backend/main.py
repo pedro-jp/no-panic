@@ -15,6 +15,8 @@ DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_NAME = os.getenv("DB_NAME")
 DB_PORT = os.getenv("DB_PORT")
 
+POOL_SIZE = int(os.getenv("POOL_SIZE"))
+
 app = Flask(__name__)
 CORS(app)
 
@@ -32,7 +34,7 @@ dbconfig = {
 
 connection_pool = pooling.MySQLConnectionPool(
     pool_name="main_pool",
-    pool_size=32,  # ajusta conforme a carga do servidor
+    pool_size=POOL_SIZE,  # ajusta conforme a carga do servidor
     pool_reset_session=True,
     **dbconfig
 )
@@ -341,7 +343,7 @@ def listar_terapeutas_por_usuario(id_usuario):
         cursor.close()
         conexao.close()
 
-@app.route('/terapeutas/<int:id_terapeuta>/usuarios', methods=['GET'])
+@app.route('/terapeuta/<int:id_terapeuta>/usuarios', methods=['GET'])
 def listar_usuarios_por_terapeuta(id_terapeuta):
     conexao = get_connection()
     cursor = conexao.cursor(dictionary=True)

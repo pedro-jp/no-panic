@@ -1,5 +1,6 @@
 .main {
   padding: 2rem 0;
+  padding-top: 0rem;
   min-height: calc(100vh - 80px);
 }
 
@@ -8,7 +9,6 @@
 }
 
 .title {
-  font-size: 2rem;
   font-weight: 700;
   color: var(--font-dark);
   margin-bottom: 0.5rem;
@@ -39,6 +39,7 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  justify-content: space-between;
 }
 
 .card:hover {

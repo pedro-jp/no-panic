@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useContext, ReactNode } from 'react';
 import { setCookie, getCookie, deleteCookie } from 'cookies-next';
+import { Terapeuta } from '@/app/terapeutas/page';
+import { redirect } from 'next/navigation';
 
 // ===== Tipagem =====
-interface User {
+export interface User {
   id: number;
   nome: string;
   email: string;
   cpf: string;
+  terapeuta: Terapeuta;
 }
 
 interface AuthContextType {
@@ -147,6 +150,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     deleteCookie('user');
     setUser(null);
+    redirect('/');
   };
 
   return (

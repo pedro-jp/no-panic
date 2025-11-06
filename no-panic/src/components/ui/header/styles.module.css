@@ -2,7 +2,6 @@
 .header {
   background-color: #fff;
   box-shadow: var(--shadow-sm);
-  overflow: hidden;
 }
 
 /* MENU SUPERIOR */
@@ -144,16 +143,51 @@
 .config {
   position: relative;
   display: flex;
-  overflow: visible;
+  overflow: visible !important;
 
   .content {
+    scale: 0;
     position: absolute;
     display: flex;
     flex-direction: column;
-    background-color: red;
-    width: fit-content;
+    justify-content: space-between;
+    align-items: baseline;
+    background-color: gray;
+    color: #fff;
+    min-width: fit-content;
+    width: 150px;
+    left: -150%;
     padding: 1rem;
     z-index: 1;
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+
+    li {
+      width: 100%;
+      display: flex;
+    }
+
+    button {
+      width: 100%;
+      display: flex;
+      border: none;
+      outline: none;
+    }
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      transform: translateY(-2px);
+      border-color: rgba(0, 0, 0, 0.1);
+    }
+  }
+  &:hover {
+    .content {
+      transform-origin: top left;
+      scale: 1;
+    }
   }
 
   img {
