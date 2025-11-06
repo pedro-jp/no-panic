@@ -32,7 +32,7 @@ dbconfig = {
 
 connection_pool = pooling.MySQLConnectionPool(
     pool_name="main_pool",
-    pool_size=32,  # ajusta conforme a carga do servidor
+    pool_size=3,  # ajusta conforme a carga do servidor
     pool_reset_session=True,
     **dbconfig
 )
@@ -247,38 +247,69 @@ def cadastro_usuario():
         conexao.close()
 
 @app.route('/terapeutas', methods=['GET'])
-def listTerapeutas():
+def listarTerapeutas():
     conexao = get_connection()
     cursor = conexao.cursor(dictionary=True)
+    
+    # Essa parte eu não sabia, peguei com Gemini, veja se está certo!!!!!*(Mas pelo que entendi, default = 1 é qual página o usuário esta, e o default 20 é o limite de terapeutas por página...Creio que seja isso)
+    page = request.args.get('page', default=1, type=int)
+    limit = request.args.get('limit', default=20, type=int)
+    offset = (page - 1) * limit
     especialidade = request.args.get('especialidade')
 
+    # Conta os terapeutas do banco de dadoss (Bd não é o meu forte ainda)
+    count_query = "SELECT COUNT(*) AS total FROM usuario u LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario WHERE t.id_usuario IS NOT NULL"
+    print(count_query)
+    # Aqui é para puxar os dados do banco de dados
+    data_query_base = """
+        SELECT 
+            u.id_usuario, 
+            u.nome, 
+            u.email, 
+            t.especialidade, 
+            t.CRP, 
+            t.disponibilidade
+        FROM 
+            usuario u 
+        LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario
+        WHERE t.id_usuario IS NOT NULL
+    """
+    
+    params = []
+    
+    # Peguei com ajuda da INTERNET essa parte
     if especialidade:
-        query = """
-            SELECT u.id_usuario, u.nome, u.email,
-                t.especialidade, t.CRP, t.disponibilidade
-            FROM usuario u
-            LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario
-            WHERE t.especialidade LIKE %s
-        """
-    else:
-        query = """
-            SELECT u.id_usuario, u.nome, u.email,
-                t.especialidade, t.CRP, t.disponibilidade
-            FROM usuario u
-            LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario
-        """
+        count_query += " AND t.especialidade LIKE %s"
+        data_query_base += " AND t.especialidade LIKE %s"
+        params.append(f"%{especialidade}%")
+    
+    data_query = data_query_base + " LIMIT %s OFFSET %s"
 
     try:
-        if especialidade:
-            cursor.execute(query, (f"%{especialidade}%",))
-        else:
-            cursor.execute(query)
+        cursor.execute(count_query, params)
+        total_records = cursor.fetchone()['total']
+        
+        data_params = params + [limit, offset]
+        cursor.execute(data_query, data_params)
         terapeutas = cursor.fetchall()
+        
+        total_pages = (total_records + limit - 1) // limit
+        
+        response = {
+            "metadata": {
+                "total_records": total_records,
+                "total_pages": total_pages,
+                "current_page": page,
+                "limit": limit
+            },
+            "terapeutas": terapeutas
+        }
 
-        return jsonify(terapeutas), 200
+        return jsonify(response), 200
+
     except Exception as e:
-        conexao.rollback()
-        return jsonify({"erro": str(e)}), 500
+        return jsonify({"erro": f"Erro ao listar terapeutas: {str(e)}"}), 500
+
     finally:
         cursor.close()
         conexao.close()
@@ -363,75 +394,6 @@ def listar_usuarios_por_terapeuta(id_terapeuta):
         return jsonify(usuarios_que_favoritaram), 200
     except Exception as e:
         return jsonify({"erro": f"Erro ao listar usuários que favoritaram: {str(e)}"}), 500
-    finally:
-        cursor.close()
-        conexao.close()
-
-
-@app.route('/terapeutas/', methods=['GET'])
-def listarTerapeutas():
-    conexao = get_connection()
-    cursor = conexao.cursor(dictionary=True)
-    
-    # Essa parte eu não sabia, peguei com Gemini, veja se está certo!!!!!*(Mas pelo que entendi, default = 1 é qual página o usuário esta, e o default 20 é o limite de terapeutas por página...Creio que seja isso)
-    page = request.args.get('page', default=1, type=int)
-    limit = request.args.get('limit', default=20, type=int)
-    offset = (page - 1) * limit
-    especialidade = request.args.get('especialidade')
-
-    # Conta os terapeutas do banco de dadoss (Bd não é o meu forte ainda)
-    count_query = "SELECT COUNT(*) AS total FROM usuario u LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario WHERE t.id_usuario IS NOT NULL"
-    
-    # Aqui é para puxar os dados do banco de dados
-    data_query_base = """
-        SELECT 
-            u.id_usuario, 
-            u.nome, 
-            u.email, 
-            t.especialidade, 
-            t.CRP, 
-            t.disponibilidade
-        FROM 
-            usuario u 
-        LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario
-        WHERE t.id_usuario IS NOT NULL
-    """
-    
-    params = []
-    
-    # Peguei com ajuda da INTERNET essa parte
-    if especialidade:
-        count_query += " AND t.especialidade LIKE %s"
-        data_query_base += " AND t.especialidade LIKE %s"
-        params.append(f"%{especialidade}%")
-    
-    data_query = data_query_base + " LIMIT %s OFFSET %s"
-
-    try:
-        cursor.execute(count_query, params)
-        total_records = cursor.fetchone()['total']
-        
-        data_params = params + [limit, offset]
-        cursor.execute(data_query, data_params)
-        terapeutas = cursor.fetchall()
-        
-        total_pages = (total_records + limit - 1) // limit
-        
-        response = {
-            "metadata": {
-                "total_records": total_records,
-                "total_pages": total_pages,
-                "current_page": page,
-                "limit": limit
-            },
-            "terapeutas": terapeutas
-        }
-
-        return jsonify(response), 200
-
-    except Exception as e:
-        return jsonify({"erro": f"Erro ao listar terapeutas: {str(e)}"}), 500
-
     finally:
         cursor.close()
         conexao.close()
