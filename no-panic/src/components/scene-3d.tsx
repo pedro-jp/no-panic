@@ -74,10 +74,10 @@ export function Scene3D() {
       <ambientLight intensity={1.2} />
       <directionalLight position={[10, 10, 10]} intensity={2.5} color='white' />
 
-      <Environment
+      {/* <Environment
         files='https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/studio_small_03_1k.hdr'
         background={false}
-      />
+      />*/}
 
       {/* Primeiro cérebro (normal) */}
       <Model

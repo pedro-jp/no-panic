@@ -8,7 +8,7 @@ export default function Page() {
   return (
     <main className={styles.container}>
       <Scene3D />
-
+      <div id='fulltop'></div>
       <section className={styles.hero}>
         <h1 id='top'>NO PANIC</h1>
         <h2>Psicologia Online, sem pressa e sem pressão.</h2>
@@ -34,7 +34,7 @@ export default function Page() {
       </section>
 
       <section id='porque' className={styles.section}>
-        <a href='#top' className={styles.scrollBtn}>
+        <a href='#fulltop' className={styles.scrollBtn}>
           <BiArrowToBottom size={32} />
         </a>
         <h2>Por que escolher o No Panic?</h2>

@@ -85,6 +85,7 @@ body:has(.container) {
   animation: fadeInUp 1s ease-out forwards;
   animation-timeline: view();
   animation-range: entry 0% cover 40%;
+  overflow: auto;
 }
 
 .grid {
