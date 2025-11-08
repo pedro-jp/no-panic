@@ -15,6 +15,8 @@ DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_NAME = os.getenv("DB_NAME")
 DB_PORT = os.getenv("DB_PORT")
 
+POOL_SIZE = int(os.getenv("POOL_SIZE"))
+
 app = Flask(__name__)
 CORS(app)
 
@@ -32,7 +34,7 @@ dbconfig = {
 
 connection_pool = pooling.MySQLConnectionPool(
     pool_name="main_pool",
-    pool_size=32,  # ajusta conforme a carga do servidor
+    pool_size=POOL_SIZE,  # ajusta conforme a carga do servidor
     pool_reset_session=True,
     **dbconfig
 )
@@ -247,38 +249,69 @@ def cadastro_usuario():
         conexao.close()
 
 @app.route('/terapeutas', methods=['GET'])
-def listTerapeutas():
+def listarTerapeutas():
     conexao = get_connection()
     cursor = conexao.cursor(dictionary=True)
+    
+    # Essa parte eu não sabia, peguei com Gemini, veja se está certo!!!!!*(Mas pelo que entendi, default = 1 é qual página o usuário esta, e o default 20 é o limite de terapeutas por página...Creio que seja isso)
+    page = request.args.get('page', default=1, type=int)
+    limit = request.args.get('limit', default=20, type=int)
+    offset = (page - 1) * limit
     especialidade = request.args.get('especialidade')
 
+    # Conta os terapeutas do banco de dadoss (Bd não é o meu forte ainda)
+    count_query = "SELECT COUNT(*) AS total FROM usuario u LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario WHERE t.id_usuario IS NOT NULL"
+    print(count_query)
+    # Aqui é para puxar os dados do banco de dados
+    data_query_base = """
+        SELECT 
+            u.id_usuario, 
+            u.nome, 
+            u.email, 
+            t.especialidade, 
+            t.CRP, 
+            t.disponibilidade
+        FROM 
+            usuario u 
+        LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario
+        WHERE t.id_usuario IS NOT NULL
+    """
+    
+    params = []
+    
+    # Peguei com ajuda da INTERNET essa parte
     if especialidade:
-        query = """
-            SELECT u.id_usuario, u.nome, u.email,
-                t.especialidade, t.CRP, t.disponibilidade
-            FROM usuario u
-            LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario
-            WHERE t.especialidade LIKE %s
-        """
-    else:
-        query = """
-            SELECT u.id_usuario, u.nome, u.email,
-                t.especialidade, t.CRP, t.disponibilidade
-            FROM usuario u
-            LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario
-        """
+        count_query += " AND t.especialidade LIKE %s"
+        data_query_base += " AND t.especialidade LIKE %s"
+        params.append(f"%{especialidade}%")
+    
+    data_query = data_query_base + " LIMIT %s OFFSET %s"
 
     try:
-        if especialidade:
-            cursor.execute(query, (f"%{especialidade}%",))
-        else:
-            cursor.execute(query)
+        cursor.execute(count_query, params)
+        total_records = cursor.fetchone()['total']
+        
+        data_params = params + [limit, offset]
+        cursor.execute(data_query, data_params)
         terapeutas = cursor.fetchall()
+        
+        total_pages = (total_records + limit - 1) // limit
+        
+        response = {
+            "metadata": {
+                "total_records": total_records,
+                "total_pages": total_pages,
+                "current_page": page,
+                "limit": limit
+            },
+            "terapeutas": terapeutas
+        }
 
-        return jsonify(terapeutas), 200
+        return jsonify(response), 200
+
     except Exception as e:
-        conexao.rollback()
-        return jsonify({"erro": str(e)}), 500
+        return jsonify({"erro": f"Erro ao listar terapeutas: {str(e)}"}), 500
+
     finally:
         cursor.close()
         conexao.close()
@@ -341,7 +374,7 @@ def listar_terapeutas_por_usuario(id_usuario):
         cursor.close()
         conexao.close()
 
-@app.route('/terapeutas/<int:id_terapeuta>/usuarios', methods=['GET'])
+@app.route('/terapeuta/<int:id_terapeuta>/usuarios', methods=['GET'])
 def listar_usuarios_por_terapeuta(id_terapeuta):
     conexao = get_connection()
     cursor = conexao.cursor(dictionary=True)
@@ -418,6 +451,85 @@ def atualizar_usuario(id_usuario):
     except Exception as e:
         conexao.rollback()
         return jsonify({"erro": f"Erro ao atualizar usuário: {str(e)}"}), 500
+@app.route('/sessao', methods=['POST'])
+def criarSessao():
+    conexao = get_connection()
+    cursor = conexao.cursor()
+    try:
+        data = request.get_json()
+        id_usuario = data['id_usuario']
+        id_terapeuta = data['id_terapeuta']
+        data_hora_agendamento = data['data_hora_agendamento']
+
+    except Exception as e:
+        return jsonify({"erro": "Dados inválidos: id_usuario, id_terapeuta e data_hora_agendamento são obrigatórios. "}), 400
+
+    query = """
+    INSERT INTO sessao (id_usuario, id_terapeuta, data_hora_agendamento)
+    VALUES (%s, %s, %s)
+    """
+
+    try:
+        cursor.execute(query, (id_usuario, id_terapeuta, data_hora_agendamento))
+        conexao.commit()
+        return jsonify({"mensagem": "Sessão criada com sucesso!"}), 201
+    except Exception as e:
+        conexao.rollback()
+        return jsonify({"erro": f"Erro ao favoritar terapeuta: {str(e)}"}), 500
+    finally:
+        cursor.close()
+        conexao.close()
+
+@app.route('/sessoes/<string:tipo>/<int:id>', methods=['GET'])
+def listar_sessoes_terapeuta(tipo,id):
+    conexao = get_connection()
+    cursor = conexao.cursor(dictionary=True)
+    queryT = """
+    SELECT 
+        u.id_usuario, 
+        u.nome, 
+        u.email,
+        s.status,
+        s.data_hora_agendamento,
+        s.data_hora_inicio,
+        s.data_hora_fim,
+        s.duracao,
+        s.tipo
+    FROM 
+        sessao s
+    JOIN 
+        usuario u ON s.id_usuario = u.id_usuario
+    WHERE 
+        s.id_terapeuta = %s
+    """
+
+    queryU = """
+     SELECT 
+        u.id_usuario, 
+        u.nome, 
+        u.email,
+        s.status,
+        s.data_hora_agendamento,
+        s.data_hora_inicio,
+        s.data_hora_fim,
+        s.duracao,
+        s.tipo
+    FROM 
+        sessao s
+    JOIN 
+        usuario u ON s.id_terapeuta = u.id_usuario
+    WHERE 
+        s.id_usuario = %s
+    """
+
+    query = queryT if tipo == 'terapeuta' else queryU;
+
+    try:
+        cursor.execute(query, (id,))
+        sessoes = cursor.fetchall()
+        return jsonify(sessoes), 200
+    except Exception as e:
+        return jsonify({"erro": f"Erro ao listar sessoes: {str(e)}"}), 500
     finally:
         cursor.close()
         conexao.close()

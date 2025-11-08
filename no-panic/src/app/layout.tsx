@@ -31,7 +31,6 @@ export const metadata: Metadata = {
 export interface User {
   id: number;
   email: string;
-  senha: string;
   primeiro_login: number;
 }
 
@@ -75,8 +74,9 @@ const load = async (email: string) => {
       const err = await response.text();
       throw new Error(err || 'Erro ao entrar');
     }
-    const { usuario } = await response.json();
-    return usuario;
+    const user = (await response.json()) as User;
+
+    return user;
   } catch (err) {
     console.error(err);
   }

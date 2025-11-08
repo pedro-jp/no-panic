@@ -32,7 +32,7 @@ const PageContent = () => {
         ? `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas?especialidade=${especialidade}`
         : `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas`;
       const res = await axios.get(url);
-      setTerapeutas(res.data);
+      setTerapeutas(res.data.terapeutas);
     } catch (err) {
       console.error(err);
     } finally {
