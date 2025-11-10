@@ -15,7 +15,7 @@ DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_NAME = os.getenv("DB_NAME")
 DB_PORT = os.getenv("DB_PORT")
 
-POOL_SIZE = int(os.getenv("POOL_SIZE",5))
+POOL_SIZE = int(os.getenv("POOL_SIZE"))
 
 app = Flask(__name__)
 CORS(app)
