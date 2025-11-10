@@ -533,6 +533,54 @@ def listar_sessoes_terapeuta(tipo,id):
     finally:
         cursor.close()
         conexao.close()
+
+@app.route('/atualizar-terapeuta/<int:id_usuario>', methods=['PUT'])
+def atualizar_terapeuta(id_usuario):
+    data = request.json
+    if not data:
+        return jsonify({"erro": "Nenhum dado enviado"}), 400
+
+    set_clauses = []
+    params = []
+
+    dados = {
+        "especialidade": data.get("especialidade"),
+        "CRP": data.get("CRP"),
+        "disponibilidade": data.get("disponibilidade")
+    }
+
+    for dado, valor in dados.items():
+        if valor is not None:
+            set_clauses.append(f"{dado} = %s")
+            params.append(valor)
+
+    if not set_clauses:
+        return jsonify({"mensagem": "Nenhum dado fornecido para atualização."}), 400
+
+    atualizacao = ", ".join(set_clauses)
+    query = f"""
+    UPDATE 
+        terapeuta 
+    SET 
+        {atualizacao} 
+    WHERE 
+        id_usuario = %s
+    """
+    params.append(id_usuario)
+    
+    conexao = get_connection()
+    cursor = conexao.cursor()
+    
+    try:
+        cursor.execute(query, params)
+        conexao.commit()
+        if cursor.rowcount == 0:
+            return jsonify({"erro": "Terapeuta não encontrado"}), 404
+        return jsonify({"mensagem": "Terapeuta atualizado com sucesso!"}), 200
+    except Exception as e:
+        conexao.rollback()
+        return jsonify({"erro": f"Erro ao atualizar terapeuta: {str(e)}"}), 500
+
 # ======== EXECUTAR API ==========
 if __name__ == "__main__":
     app.run(debug=True)
