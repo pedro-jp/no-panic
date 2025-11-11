@@ -306,7 +306,7 @@ export function VideoCall({ sessao, me, outro }: PageProps) {
         <div className={styles.timer}>
           {' '}
           <FaClock color='#00c951' />
-          45:32
+          <Contador hasCall={onCall} />
         </div>
       </div>
       <div className={styles.videos}>
@@ -388,4 +388,30 @@ export function VideoCall({ sessao, me, outro }: PageProps) {
       {/* <div className={styles.bitrate}>Bitrate atual: {bitrate} mbps</div> */}
     </div>
   );
+}
+
+export function Contador({ hasCall }: { hasCall: boolean }) {
+  const [segundosTotais, setSegundosTotais] = useState(0);
+
+  useEffect(() => {
+    if (!hasCall) return;
+
+    const intervalo = setInterval(() => {
+      setSegundosTotais((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(intervalo);
+  }, [hasCall]);
+
+  const horas = Math.floor(segundosTotais / 3600);
+  const minutos = Math.floor((segundosTotais % 3600) / 60);
+  const segundos = segundosTotais % 60;
+
+  const formatTempo = `${
+    horas > 0 ? `${horas.toString().padStart(2, '0')}:` : ''
+  }${minutos.toString().padStart(2, '0')}:${segundos
+    .toString()
+    .padStart(2, '0')}`;
+
+  return <>{formatTempo}</>;
 }
