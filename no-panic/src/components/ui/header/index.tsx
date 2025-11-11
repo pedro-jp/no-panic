@@ -80,8 +80,22 @@ export const HeaderComponent = () => {
           <li>
             <Link href='/terapeutas'>Terapeutas</Link>
           </li>
+          {user?.terapeuta?.CRP ? (
+            <li>
+              <Link href='/pacientes'>Pacientes</Link>
+            </li>
+          ) : (
+            <li>
+              <Link href='/favoritos'>Favoritos</Link>
+            </li>
+          )}
           <li>
-            <Link href='/favoritos'>Favoritos</Link>
+            <Link
+              href='/sessoes
+            '
+            >
+              Sessões
+            </Link>
           </li>
           <li>
             <Link href='/calendario'>Calendário</Link>
