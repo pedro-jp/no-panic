@@ -7,7 +7,6 @@ import Link from 'next/link';
 import { IoClose, IoHeart, IoMenu } from 'react-icons/io5';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { BiLogOut, BiUser } from 'react-icons/bi';
-import { redirect } from 'next/navigation';
 
 export const HeaderComponent = () => {
   const { user, logout } = useAuth();
@@ -43,9 +42,6 @@ export const HeaderComponent = () => {
             >
               Sessões
             </Link>
-          </li>
-          <li>
-            <Link href='#'>Histórico</Link>
           </li>
           <li>
             <Link href='#'>Chat</Link>
@@ -96,12 +92,6 @@ export const HeaderComponent = () => {
             >
               Sessões
             </Link>
-          </li>
-          <li>
-            <Link href='/calendario'>Calendário</Link>
-          </li>
-          <li>
-            <Link href='#'>Histórico</Link>
           </li>
           <li>
             <Link href='#'>Chat</Link>
