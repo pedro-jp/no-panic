@@ -55,7 +55,8 @@ export const Card = ({ terapeuta, favoritos, onFavoritar }: Prop) => {
         <div>
           <h4>
             {terapeuta.nome.split(' ')[0]}{' '}
-            {terapeuta.nome.split(' ')[terapeuta.nome.split(' ').length - 1]}
+            {terapeuta.nome.split(' ').length > 1 &&
+              terapeuta.nome.split(' ')[terapeuta.nome.split(' ').length - 1]}
           </h4>
           <p title='CRP do profissional'>{terapeuta.CRP}</p>
         </div>
