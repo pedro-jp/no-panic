@@ -541,6 +541,75 @@ def listar_sessoes_terapeuta(tipo,id):
         cursor.close()
         conexao.close()
 
+@app.route('/sessao/<int:id>', methods=['GET'])
+def get_sessao(id):
+    conexao = get_connection()
+    cursor = conexao.cursor(dictionary=True)
+
+    query = """
+    SELECT 
+        s.id_sessao,
+        s.tipo,
+        s.status,
+        s.data_hora_agendamento,
+        s.data_hora_inicio,
+        s.data_hora_fim,
+        s.duracao,
+        s.criadoEm,
+        s.atualizadoEm,
+
+        -- dados do paciente (usuario)
+        u.id_usuario AS id_usuario,
+        u.nome AS nome_usuario,
+        u.email AS email_usuario,
+
+        -- dados do terapeuta
+        t.id_usuario AS id_terapeuta,
+        t.nome AS nome_terapeuta,
+        t.email AS email_terapeuta
+
+    FROM sessao s
+    JOIN usuario u ON s.id_usuario = u.id_usuario
+    JOIN usuario t ON s.id_terapeuta = t.id_usuario
+    WHERE s.id_sessao = %s
+    LIMIT 1
+    """
+
+    try:
+        cursor.execute(query, (id,))
+        s = cursor.fetchone()
+        sessao = {
+            "id_sessao":s["id_sessao"],
+            "tipo": s["tipo"],
+            "status": s["status"],
+            "data_hora_agendamento": s["data_hora_agendamento"],
+            "data_hora_inicio": s["data_hora_inicio"],
+            "data_hora_fim": s["data_hora_fim"],
+            "duracao": s["duracao"],
+            "criadoEm": s["criadoEm"],
+            "atualizadoEm": s["atualizadoEm"],
+            "usuario": {
+                "id": s["id_usuario"],
+                "nome": s["nome_usuario"],
+                "email": s["email_usuario"],
+            },
+            "terapeuta": {
+                "id": s["id_terapeuta"],
+                "nome": s["nome_terapeuta"],
+                "email": s["email_terapeuta"],
+            }
+        }
+        print(sessao)
+        if not sessao:
+            return jsonify({"erro": "Sessão não encontrada"}), 404
+        return jsonify(sessao), 200
+    except Exception as e:
+        return jsonify({"erro": f"Erro ao buscar sessão: {str(e)}"}), 500
+    finally:
+        cursor.close()
+        conexao.close()
+
+
 @app.route('/atualizar-sessao/<int:id_sessao>', methods=['PUT'])
 def atualizar_sessao(id_sessao):
     data = request.json

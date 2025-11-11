@@ -14,6 +14,7 @@ import { Loader } from '@/components/loader/loader';
 import { Status, Tipo } from '@/enums/enums';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import Link from 'next/link';
 
 const Page = () => {
   const { user } = useAuth();
@@ -116,7 +117,8 @@ const Page = () => {
                     </div>
 
                     <div className={styles.cardActions}>
-                      <button
+                      <Link
+                        href={`/chamada/${sessao.id_sessao}/${user?.nome}/${sessao.id_usuario}`}
                         // onClick={() => handleCall(sessao.id_usuario)}
                         className={styles.btnPrimary}
                       >
@@ -139,7 +141,7 @@ const Page = () => {
                           />
                         </svg>
                         <span>Ligar</span>
-                      </button>
+                      </Link>
                       {user?.terapeuta?.CRP ? (
                         <div className={styles.terapeuta_actions}>
                           {sessao.status !== Status.agendada && (

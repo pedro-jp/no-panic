@@ -71,8 +71,9 @@ body:has(.container) {
       padding-block: 1rem;
       border-radius: var(--border-radius);
 
-      &:nth-child(1)::before {
-        content: 'Você';
+      &:nth-child(1)::before,
+      .outro {
+        content: 'Eu';
         position: absolute;
         z-index: 1;
         bottom: 10px;
@@ -127,4 +128,42 @@ body:has(.container) {
   font-weight: bold;
   font-size: 18px;
   color: #4caf50;
+}
+
+div.video:has(.videoOff) {
+  display: grid;
+  place-content: center;
+}
+
+.videoOff {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.calling {
+  animation: pulseCall 1.2s ease-in-out infinite;
+}
+
+@keyframes pulseCall {
+  0% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
 }

@@ -8,21 +8,28 @@ import { FaClock } from 'react-icons/fa6';
 import {
   BiMicrophone,
   BiMicrophoneOff,
+  BiUserCircle,
   BiVideo,
   BiVideoOff,
 } from 'react-icons/bi';
 import { FiPhone, FiPhoneMissed } from 'react-icons/fi';
 import { TbCameraRotate } from 'react-icons/tb';
+import { SessaoCompleta } from '@/types/types';
 
 const SIGNALING_SERVER = process.env.NEXT_PUBLIC_CALL_SERVER_URL;
-const ROOM_ID = 'teste-sala';
 
 interface SignalData {
   sdp?: RTCSessionDescriptionInit;
   candidate?: RTCIceCandidateInit;
 }
 
-export default function VideoCall() {
+interface PageProps {
+  sessao: SessaoCompleta;
+  me: { id: number; nome: string; email: string };
+  outro: { id: number; nome: string; email: string };
+}
+
+export function VideoCall({ sessao, me, outro }: PageProps) {
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
@@ -34,35 +41,58 @@ export default function VideoCall() {
   const [isFrontCamera, setIsFrontCamera] = useState(true);
   const [micEnabled, setMicEnabled] = useState(true);
   const [videoEnabled, setVideoEnabled] = useState(true);
+  const [remoteVideoEnabled, setRemoteVideoEnabled] = useState(true);
+  const [initialRemoteVideo, setInitialRemoteVideo] = useState(true);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    startCall();
+  }, [ready]);
+
+  useEffect(() => {
+    if (remoteVideoEnabled) setInitialRemoteVideo(false);
+  }, [remoteVideoEnabled]);
 
   useEffect(() => {
     socketRef.current = io(SIGNALING_SERVER);
 
     socketRef.current.on('connect', () => {
-      socketRef.current?.emit('join', ROOM_ID);
-    });
+      socketRef.current?.emit('join', sessao.id_sessao);
+      console.log('✅ Conectado ao socket:', socketRef.current?.id);
 
-    socketRef.current.on('signal', async ({ data }: { data: SignalData }) => {
-      const pc = pcRef.current;
-      if (!pc) return;
+      socketRef.current?.on('toggleVideo', ({ enabled, from }) => {
+        console.log('🎥 toggleVideo recebido de', from, 'enabled:', enabled);
+        if (from !== socketRef.current?.id) {
+          setRemoteVideoEnabled(enabled);
+        }
+      });
 
-      if (data.sdp) {
-        await pc.setRemoteDescription(data.sdp);
-        if (data.sdp.type === 'offer') {
-          const answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
-          socketRef.current?.emit('signal', {
-            roomId: ROOM_ID,
-            data: { sdp: answer },
-          });
+      socketRef.current?.on(
+        'signal',
+        async ({ data }: { data: SignalData }) => {
+          const pc = pcRef.current;
+          if (!pc) return;
+
+          if (data.sdp) {
+            await pc.setRemoteDescription(data.sdp);
+            if (data.sdp.type === 'offer') {
+              const answer = await pc.createAnswer();
+              await pc.setLocalDescription(answer);
+              socketRef.current?.emit('signal', {
+                roomId: sessao.id_sessao,
+                data: { sdp: answer },
+              });
+            }
+          } else if (data.candidate) {
+            try {
+              await pc.addIceCandidate(data.candidate);
+            } catch (err) {
+              console.error(err);
+            }
+          }
         }
-      } else if (data.candidate) {
-        try {
-          await pc.addIceCandidate(data.candidate);
-        } catch (err) {
-          console.error(err);
-        }
-      }
+      );
+      setReady(true);
     });
 
     startLocalStream();
@@ -93,8 +123,6 @@ export default function VideoCall() {
     const iceServers = process.env.NEXT_PUBLIC_ICE_SERVERS
       ? JSON.parse(process.env.NEXT_PUBLIC_ICE_SERVERS)
       : [];
-
-    console.log(iceServers);
 
     const pc = new RTCPeerConnection({
       iceServers: [
@@ -130,7 +158,7 @@ export default function VideoCall() {
       if (track.kind === 'video') {
         const parameters = sender.getParameters();
         if (!parameters.encodings) parameters.encodings = [{}];
-        parameters.encodings[0].maxBitrate = 10_000_000; // 500 kbps
+        parameters.encodings[0].maxBitrate = 10_000_000;
         sender.setParameters(parameters).catch(console.error);
       }
     });
@@ -138,21 +166,23 @@ export default function VideoCall() {
     pc.onicecandidate = (event) => {
       if (event.candidate) {
         socketRef.current?.emit('signal', {
-          roomId: ROOM_ID,
+          roomId: sessao.id_sessao,
           data: { candidate: event.candidate },
         });
       }
     };
 
     pc.ontrack = (event) => {
-      if (remoteVideoRef.current)
-        remoteVideoRef.current.srcObject = event.streams[0];
+      if (remoteVideoRef.current) {
+        const stream = event.streams[0];
+        remoteVideoRef.current.srcObject = stream;
+      }
     };
 
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
     socketRef.current?.emit('signal', {
-      roomId: ROOM_ID,
+      roomId: sessao.id_sessao,
       data: { sdp: offer },
     });
 
@@ -192,19 +222,16 @@ export default function VideoCall() {
     if (!localStream) return;
 
     try {
-      // Alterna entre frontal e traseira
       const newFacingMode = isFrontCamera ? 'environment' : 'user';
       const videoTrack = localStream.getVideoTracks()[0];
 
-      // Pega novo stream com a outra câmera
       const newStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: newFacingMode },
-        audio: true, // mantém o áudio
+        audio: true,
       });
 
       const newVideoTrack = newStream.getVideoTracks()[0];
 
-      // Substitui a track no peer connection (sem reiniciar a call)
       const sender = pcRef.current
         ?.getSenders()
         .find((s) => s.track?.kind === 'video');
@@ -213,7 +240,6 @@ export default function VideoCall() {
         sender.replaceTrack(newVideoTrack);
       }
 
-      // Atualiza a câmera local
       localStream.removeTrack(videoTrack);
       videoTrack.stop();
       localStream.addTrack(newVideoTrack);
@@ -239,10 +265,29 @@ export default function VideoCall() {
 
   const toggleVideo = () => {
     if (!localStream) return;
+
+    const newEnabled = !videoEnabled;
+
     localStream.getVideoTracks().forEach((track) => {
-      track.enabled = !track.enabled;
+      track.enabled = newEnabled;
     });
-    setVideoEnabled((prev) => !prev);
+
+    setVideoEnabled(newEnabled);
+
+    if (localVideoRef.current) {
+      if (newEnabled) {
+        localVideoRef.current.srcObject = localStream;
+        localVideoRef.current.play().catch(console.error);
+      } else {
+        localVideoRef.current.pause();
+      }
+    }
+
+    socketRef.current?.emit('toggleVideo', {
+      roomId: sessao.id_sessao,
+      enabled: newEnabled,
+      from: socketRef.current?.id,
+    });
   };
 
   return (
@@ -256,7 +301,7 @@ export default function VideoCall() {
             width={35}
           />
           <div>
-            <h5>Dra. Ana Silva</h5>
+            <h5>{outro.nome}</h5>
             <span>Sessão em andamento</span>
           </div>
         </div>
@@ -268,7 +313,9 @@ export default function VideoCall() {
       </div>
       <div className={styles.videos}>
         <div className={styles.video}>
+          {!videoEnabled && <span className={styles.videoOff}>Eu</span>}
           <video
+            style={{ display: videoEnabled ? 'block' : 'none' }}
             ref={localVideoRef}
             autoPlay
             muted
@@ -278,11 +325,34 @@ export default function VideoCall() {
         </div>
         <div className={styles.video}>
           <video
+            style={{
+              display: remoteVideoEnabled && onCall ? 'block' : 'none',
+            }}
             ref={remoteVideoRef}
             autoPlay
             playsInline
             className={styles.remote}
           />
+
+          {!onCall && (
+            <span className={`${styles.videoOff} ${styles.calling}`}>
+              {outro.nome.split(' ')[0][0]}
+              {outro.nome.split(' ').length > 1
+                ? outro.nome.split(' ')[outro.nome.split(' ').length - 1][0]
+                : ''}
+            </span>
+          )}
+
+          {!remoteVideoEnabled && onCall && (
+            <span className={styles.videoOff}>
+              {outro.nome.split(' ')[0][0]}
+              {outro.nome.split(' ').length > 1
+                ? outro.nome.split(' ')[outro.nome.split(' ').length - 1][0]
+                : ''}
+            </span>
+          )}
+
+          <span className={styles.outro}>{outro.nome}</span>
         </div>
       </div>
       <div className={styles.buttons}>
