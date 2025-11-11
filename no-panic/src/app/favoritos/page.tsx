@@ -131,7 +131,8 @@ const Favoritos = () => {
           <div className={styles.cardBody}>
             <h3 className={styles.cardTitle}>
               {fav.nome.split(' ')[0]}{' '}
-              {fav.nome.split(' ')[fav.nome.split(' ').length - 1]}{' '}
+              {fav.nome.split(' ').length > 1 &&
+                fav.nome.split(' ')[fav.nome.split(' ').length - 1]}{' '}
               <span>{fav.disponibilidade}</span>
             </h3>
             <p className={styles.cardId}>{fav.especialidade}</p>

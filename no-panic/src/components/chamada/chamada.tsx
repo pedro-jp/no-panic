@@ -385,7 +385,7 @@ export function VideoCall({ sessao, me, outro }: PageProps) {
           </>
         )}
       </div>
-      <div className={styles.bitrate}>Bitrate atual: {bitrate} mbps</div>
+      {/* <div className={styles.bitrate}>Bitrate atual: {bitrate} mbps</div> */}
     </div>
   );
 }

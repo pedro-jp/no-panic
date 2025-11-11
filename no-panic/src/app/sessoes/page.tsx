@@ -105,11 +105,10 @@ const Page = () => {
                     <div className={styles.cardBody}>
                       <h3 className={styles.cardTitle}>
                         {sessao.nome.split(' ')[0]}{' '}
-                        {
+                        {sessao.nome.split(' ').length > 1 &&
                           sessao.nome.split(' ')[
                             sessao.nome.split(' ').length - 1
-                          ]
-                        }{' '}
+                          ]}{' '}
                         <span>
                           {formatarData(sessao.data_hora_agendamento)}
                         </span>
