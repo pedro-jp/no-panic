@@ -58,10 +58,8 @@ export function VideoCall({ sessao, me, outro }: PageProps) {
 
     socketRef.current.on('connect', () => {
       socketRef.current?.emit('join', sessao.id_sessao);
-      console.log('✅ Conectado ao socket:', socketRef.current?.id);
 
       socketRef.current?.on('toggleVideo', ({ enabled, from }) => {
-        console.log('🎥 toggleVideo recebido de', from, 'enabled:', enabled);
         if (from !== socketRef.current?.id) {
           setRemoteVideoEnabled(enabled);
         }
@@ -294,12 +292,12 @@ export function VideoCall({ sessao, me, outro }: PageProps) {
     <div className={styles.container}>
       <div className={styles.header}>
         <div className={styles.profissional}>
-          <Image
-            src='/profile.jpg'
-            alt='Imagem do profissional'
-            height={35}
-            width={35}
-          />
+          <span className={`${styles.avatar} `}>
+            {outro.nome.split(' ')[0][0]}
+            {outro.nome.split(' ').length > 1
+              ? outro.nome.split(' ')[outro.nome.split(' ').length - 1][0]
+              : ''}
+          </span>
           <div>
             <h5>{outro.nome}</h5>
             <span>Sessão em andamento</span>
