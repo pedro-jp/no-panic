@@ -9,6 +9,7 @@ import { Content } from '@/components/ui/content';
 import axios from 'axios';
 import { AuthProvider, useAuth, User } from '@/context/auth-context';
 import { GridLoader } from 'react-spinners';
+import { Loader } from '@/components/loader/loader';
 
 interface Terapeuta {
   nome: string;
@@ -84,14 +85,7 @@ const Pacientes = () => {
     }
   };
 
-  if (loading)
-    return (
-      loading && (
-        <div className={styles.loading}>
-          <GridLoader color='purple' />
-        </div>
-      )
-    );
+  if (loading) return loading && <Loader />;
 
   return pacientes && pacientes.length === 0 ? (
     <div className={styles.emptyState}>

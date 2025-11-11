@@ -451,6 +451,11 @@ def atualizar_usuario(id_usuario):
     except Exception as e:
         conexao.rollback()
         return jsonify({"erro": f"Erro ao atualizar usuário: {str(e)}"}), 500
+    finally:
+        cursor.close()
+        conexao.close()
+
+    
 @app.route('/sessao', methods=['POST'])
 def criarSessao():
     conexao = get_connection()
@@ -494,6 +499,7 @@ def listar_sessoes_terapeuta(tipo,id):
         s.data_hora_inicio,
         s.data_hora_fim,
         s.duracao,
+        s.id_sessao,
         s.tipo
     FROM 
         sessao s
@@ -513,6 +519,7 @@ def listar_sessoes_terapeuta(tipo,id):
         s.data_hora_inicio,
         s.data_hora_fim,
         s.duracao,
+        s.id_sessao,
         s.tipo
     FROM 
         sessao s
@@ -533,6 +540,41 @@ def listar_sessoes_terapeuta(tipo,id):
     finally:
         cursor.close()
         conexao.close()
+
+@app.route('/atualizar-sessao/<int:id_sessao>', methods=['PUT'])
+def atualizar_sessao(id_sessao):
+    data = request.json
+    if not data:
+        return jsonify({"erro": "Nenhum dado enviado"}), 400
+    
+    status = data.get("status")
+        
+    query ="""
+    UPDATE 
+        sessao 
+    SET status = %s
+         
+    WHERE 
+        id_sessao = %s
+        """
+    
+    
+    conexao = get_connection()
+    cursor = conexao.cursor()
+    
+    try:
+       cursor.execute(query, (status,id_sessao))
+       conexao.commit()
+       if cursor.rowcount == 0:
+           return jsonify({"erro": "Sessao nao encontrada"}), 404
+       return jsonify({"mensagem": "Sessao atualizada com sucesso!"}), 200
+    except Exception as e:
+        conexao.rollback()
+        return jsonify({"erro": f"Erro ao atualizar sessao: {str(e)}"}), 500
+    finally:
+         cursor.close()
+         conexao.close()
+
 
 @app.route('/atualizar-terapeuta/<int:id_usuario>', methods=['PUT'])
 def atualizar_terapeuta(id_usuario):
@@ -580,6 +622,10 @@ def atualizar_terapeuta(id_usuario):
     except Exception as e:
         conexao.rollback()
         return jsonify({"erro": f"Erro ao atualizar terapeuta: {str(e)}"}), 500
+    finally:
+        cursor.close()
+        conexao.close()
+
 
 # ======== EXECUTAR API ==========
 if __name__ == "__main__":

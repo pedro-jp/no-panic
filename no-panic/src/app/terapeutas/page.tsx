@@ -8,6 +8,7 @@ import { Card } from '@/components/card';
 import axios from 'axios';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { GridLoader } from 'react-spinners';
+import { Loader } from '@/components/loader/loader';
 
 export interface Terapeuta {
   nome: string;
@@ -92,11 +93,7 @@ const PageContent = () => {
               onChange={(e) => setEspecialidade(e.target.value)}
             />
             <div className={styles.card_container}>
-              {loading && (
-                <div className={styles.loading}>
-                  <GridLoader color='purple' />
-                </div>
-              )}
+              {loading && <Loader />}
               {!loading &&
                 terapeutas
                   .filter((t) => t.CRP)
