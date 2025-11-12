@@ -123,11 +123,11 @@ const Pacientes = () => {
                 {paciente.nome.split(' ')[paciente.nome.split(' ').length - 1]}{' '}
                 <span>{paciente.cpf}</span>
               </h3>
-              <p className={styles.cardId}>{paciente.email}</p>
+              {/* <p className={styles.cardId}>{paciente.email}</p> */}
             </div>
 
             <div className={styles.cardActions}>
-              <button
+              {/* <button
                 // onClick={() => handleCall(paciente.id_usuario)}
                 className={styles.btnPrimary}
               >
@@ -143,7 +143,7 @@ const Pacientes = () => {
                   <rect x='1' y='5' width='15' height='14' rx='2' ry='2' />
                 </svg>
                 <span>Ligar</span>
-              </button>
+              </button> */}
               <button
                 //  onClick={() => handleChat(paciente.id_usuario)}
                 className={styles.btnSecondary}

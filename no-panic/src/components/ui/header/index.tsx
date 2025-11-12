@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { IoClose, IoHeart, IoMenu } from 'react-icons/io5';
 import { AuthProvider, useAuth } from '@/context/auth-context';
-import { BiLogOut, BiUser } from 'react-icons/bi';
+import { BiLogOut, BiUser, BiUserPlus } from 'react-icons/bi';
 
 export const HeaderComponent = () => {
   const { user, logout } = useAuth();
@@ -62,6 +62,15 @@ export const HeaderComponent = () => {
                   </button>
                 </Link>
               </li>
+
+              {!user?.terapeuta?.CRP && (
+                <Link href={'/cadastro-terapeuta-psicologo'}>
+                  <button>
+                    <BiUserPlus />
+                    Terapeuta/Psicólogo
+                  </button>
+                </Link>
+              )}
               <li>
                 <button onClick={() => logout()}>
                   <BiLogOut /> Sair
