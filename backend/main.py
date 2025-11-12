@@ -118,6 +118,45 @@ def login():
         cursor.close()
         conexao.close()
 
+@app.route('/has-terapeuta', methods=['POST'])
+def hasTerapeuta():
+    data = request.get_json(force=True)
+    if not data:
+        return jsonify({"erro": "JSON inválido"}), 400
+
+    id = data.get("id")
+    if not id:
+        return jsonify({"erro": "Informe o id"}), 400
+
+    conexao = get_connection()
+    cursor = conexao.cursor(dictionary=True)
+    try:
+        query = """
+            SELECT t.CRP
+            FROM usuario u
+            LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario
+            WHERE u.id_usuario = %s
+        """
+        cursor.execute(query, (id,))
+        usuario = cursor.fetchone()
+        if not usuario:
+            return jsonify({"erro": "Usuário não encontrado"}), 404
+
+
+        if usuario["CRP"]:
+            user = {
+                "CRP": usuario["CRP"],
+            }
+            return jsonify(user), 200
+        return jsonify({"message": "Terapeuta não cadastrado"})
+
+
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+    finally:
+        cursor.close()
+        conexao.close()
+
 @app.route('/load-user', methods=['POST'])
 def loadUser():
     data = request.get_json(force=True)

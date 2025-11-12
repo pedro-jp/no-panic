@@ -1,51 +1,28 @@
 'use client';
-import { Button } from '@/components/ui/button';
-import { Container } from '@/components/ui/container';
-import { Content } from '@/components/ui/content';
-import { Header } from '@/components/ui/header';
-import { Input } from '@/components/ui/input-com-label';
-import { AuthProvider, useAuth } from '@/context/auth-context';
-import React, { useState } from 'react';
 
-import styles from './styles.module.css';
 import axios from 'axios';
-import { toast } from 'react-toastify';
 import { redirect } from 'next/navigation';
+import { useState } from 'react';
+import { toast } from 'react-toastify';
+import { Input } from '../ui/input-com-label';
+import { Button } from '../ui/button';
+import styles from './styles.module.css';
 
-const Page = () => {
-  return (
-    <>
-      <head>
-        <title>Terapeuta | Psicólogo</title>
-      </head>
-      <Header />
-      <Container>
-        <Content>
-          <AuthProvider>
-            <Conteudo />
-          </AuthProvider>
-        </Content>
-      </Container>
-    </>
-  );
-};
+interface PageProps {
+  id: number;
+}
 
-export default Page;
-
-const Conteudo = () => {
-  const { user } = useAuth();
+const TerapeutaForm = ({ id }: PageProps) => {
   const [loading, setLoading] = useState(false);
   const [especialidade, setEspecialidade] = useState('');
   const [crp, setCrp] = useState('');
   const [disponibilidade, setDisponibilidade] = useState('');
+  const [senha, setSenha] = useState('');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const id = user?.id;
     try {
       setLoading(true);
-
-      if (!user) return;
 
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/cadastro-terapeuta`,
@@ -66,8 +43,6 @@ const Conteudo = () => {
     }
   };
 
-  if (user?.terapeuta?.CRP) return 'Profissional cadastrado';
-
   return (
     <main>
       <form className={styles.form} action='submit' onSubmit={handleSubmit}>
@@ -83,12 +58,17 @@ const Conteudo = () => {
             value={disponibilidade}
           />
         </div>
-        <div className={styles.crp}>
+        <div>
           <Input
             onChange={(e) => setCrp(e.target.value)}
             label='CRP'
-            className={styles.crp}
             value={crp}
+          />
+
+          <Input
+            onChange={(e) => setSenha(e.target.value)}
+            label='Senha'
+            value={senha}
           />
         </div>
 
@@ -99,3 +79,5 @@ const Conteudo = () => {
     </main>
   );
 };
+
+export default TerapeutaForm;
