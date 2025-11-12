@@ -40,6 +40,11 @@ interface Params {
   id: number;
 }
 
+export const metadata = {
+  title: 'Terapeuta | Psicólogo',
+  description: 'Terapia online fácil e segura',
+};
+
 const Page = async ({ params }: { params: Params }) => {
   const { id } = await params;
 
