@@ -128,6 +128,9 @@ class AtualizarTerapeutaBody(BaseModel):
     especialidade: Optional[str] = None
     CRP: Optional[str] = None
     disponibilidade: Optional[str] = None
+class CriarConsentimentoBody(BaseModel):
+    usuario_id: int
+    termo_id: int
 
 # =====================================================
 # ROTAS
@@ -578,5 +581,26 @@ async def atualizar_terapeuta(request: Request, id_usuario: int, data: Atualizar
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Erro ao atualizar terapeuta: {str(e)}")
 
+@app.post('/consentimentos',status_code=status.HTTP_201_CREATED)
+async def criar_consentimento(request: Request, data: CriarConsentimentoBody):
+    pool = request.app.state.pool
+    
+    async with pool.acquire() as conn:
+        async with conn.cursor() as cursor:
+            try:
+                query = """ 
+                INSERT INTO consentimentos 
+                (usuario_id, termo_id)
+                VALUES (%s, %s)
+                """
+                await cursor.execute(query, (data.usuario_id, data.termo_id))
+                await conn.commit()
+                return {
+                    "mensagem": "Consentimento criado com sucesso!", 
+                    "id": cursor.lastrowid
+                }
+            except Exception as e:
+                await conn.rollback()
+                raise HTTPException(status_code=500, detail=f"Erro ao criar consentimento: {str(e)}")
 # Para rodar:
 # uvicorn main:app --reload
