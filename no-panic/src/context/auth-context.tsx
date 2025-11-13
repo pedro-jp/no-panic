@@ -123,6 +123,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     deleteCookie('user');
     setUser(null);
+    localStorage.removeItem('favoritos');
+    localStorage.removeItem('sessoes');
+    localStorage.removeItem('pacientes');
     window.location.href = '/';
   };
 
