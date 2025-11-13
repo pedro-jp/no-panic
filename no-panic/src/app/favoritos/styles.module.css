@@ -123,6 +123,11 @@
   padding-top: 0.5rem;
   border-top: 1px solid rgba(0, 0, 0, 0.06);
   display: grid;
+  height: max-content;
+
+  & > div {
+    height: max-content;
+  }
 
   input {
     width: 100%;
