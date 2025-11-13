@@ -1,8 +1,8 @@
 fastapi
 uvicorn[standard]
 pydantic[email]
-mysql-connector-python
 bcrypt
 python-dotenv
 Jinja2
 gunicorn
+aiomysql
