@@ -53,7 +53,6 @@ export default async function RootLayout({
     <html lang='pt-BR'>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <AuthProvider>
-          {user?.nome}
           {user?.primeiro_login ? <PrimeiroLoginForm user={user} /> : null}
           {children}
           <ToastContainer position='top-right' autoClose={3000} />
