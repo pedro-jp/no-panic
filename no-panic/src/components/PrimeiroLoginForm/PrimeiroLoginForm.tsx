@@ -119,7 +119,7 @@ export const PrimeiroLoginForm = ({ user }: PrimeiroLoginFormProps) => {
             body: JSON.stringify(id),
           }
         );
-        load();
+        await load();
         window.location.href = '/';
       }
     } catch (error) {
