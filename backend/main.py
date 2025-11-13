@@ -1,5 +1,11 @@
-from flask import Flask, request, jsonify, render_template
-from flask_cors import CORS
+from fastapi import FastAPI, Request, HTTPException, status
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
+
+from pydantic import BaseModel, EmailStr
+from typing import Optional, List
+
 import mysql.connector
 from mysql.connector import pooling
 import bcrypt
@@ -10,77 +16,133 @@ import time
 # Carrega o .env
 load_dotenv()
 
+# --- Modelos Pydantic (Validação de Request Body) ---
+# Substituem o request.json e validam os dados automaticamente
 
+class CadastroBody(BaseModel):
+    nome: str
+    cpf: str
+    email: EmailStr
+    senha: str
 
+class LoginBody(BaseModel):
+    email: EmailStr
+    senha: str
+
+class IdBody(BaseModel):
+    id: int
+
+class EmailBody(BaseModel):
+    email: EmailStr
+
+class CadastroTerapeutaBody(BaseModel):
+    id: int
+    especialidade: str
+    crp: str
+    disponibilidade: str
+
+class CadastroUsuarioBody(BaseModel):
+    id: int
+    data_nascimento: str
+    endereco: str
+    contato_emergencia: str
+
+class FavoritarBody(BaseModel):
+    id_usuario: int
+    id_terapeuta: int
+
+class AtualizarUsuarioBody(BaseModel):
+    nome: Optional[str] = None
+    email: Optional[EmailStr] = None
+    data_nascimento: Optional[str] = None
+    endereco: Optional[str] = None
+    contato_emergencia: Optional[str] = None
+    senha: Optional[str] = None
+
+class CriarSessaoBody(BaseModel):
+    id_usuario: int
+    id_terapeuta: int
+    data_hora_agendamento: str # Considere usar datetime para validação extra
+
+class AtualizarSessaoBody(BaseModel):
+    status: str
+
+class AtualizarTerapeutaBody(BaseModel):
+    especialidade: Optional[str] = None
+    CRP: Optional[str] = None
+    disponibilidade: Optional[str] = None
+
+# --- Configuração do Banco de Dados ---
 DB_HOST = os.getenv("DB_HOST")
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_NAME = os.getenv("DB_NAME")
 DB_PORT = os.getenv("DB_PORT")
 
-POOL_SIZE = int(os.getenv("POOL_SIZE"))
+POOL_SIZE = int(os.getenv("POOL_SIZE", 5)) # Default pool size
 
-app = Flask(__name__)
-CORS(app)
-
-# ======== POOL DE CONEXÕES ==========
-# Em vez de abrir uma conexão nova a cada request,
-# o pool mantém conexões abertas e reaproveita — muito mais rápido.
 dbconfig = {
     "host": DB_HOST,
     "user": DB_USER,
     "password": DB_PASSWORD,
     "database": DB_NAME,
     "port": DB_PORT,
-    "autocommit": True
+    "autocommit": True # Muito importante para FastAPI/async
 }
 
 connection_pool = pooling.MySQLConnectionPool(
     pool_name="main_pool",
-    pool_size=POOL_SIZE,  # ajusta conforme a carga do servidor
+    pool_size=POOL_SIZE,
     pool_reset_session=True,
     **dbconfig
 )
 
 def get_connection():
+    # Esta função continua síncrona, o que é OK.
+    # FastAPI rodará o handler da rota em um threadpool.
     return connection_pool.get_connection()
 
+# --- Inicialização do App FastAPI ---
+app = FastAPI()
+
+# Configuração do CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Em produção, restrinja isso
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Configuração para renderizar o index.html
+# Mova seu `index.html` para uma pasta chamada `templates`
+templates = Jinja2Templates(directory="templates")
+
 # =====================================================
-# ROTAS (todo o resto do teu código, sem mudanças)
+# ROTAS (Convertidas para FastAPI)
 # =====================================================
 
-@app.route('/', methods=['GET'])
-def home():
-    return render_template("index.html")
+@app.get('/', response_class=HTMLResponse)
+async def home(request: Request):
+    # Assegure-se que `index.html` está na pasta `templates`
+    return templates.TemplateResponse("index.html", {"request": request})
 
 # ======== ROTA: CADASTRO ==========
-@app.route('/cadastro', methods=['POST'])
-def cadastro():
-    data = request.json
-    nome = data.get("nome")
-    cpf = data.get("cpf")
-    email = data.get("email")
-    senha = data.get("senha")
-
-    if not all([nome, cpf, email, senha]):
-        return jsonify({"erro": "Campos obrigatórios faltando"}), 400
-
-    senha_hash = bcrypt.hashpw(senha.encode('utf-8'), bcrypt.gensalt())
+@app.post('/cadastro', status_code=status.HTTP_201_CREATED)
+async def cadastro(data: CadastroBody):
+    senha_hash = bcrypt.hashpw(data.senha.encode('utf-8'), bcrypt.gensalt())
 
     conexao = get_connection()
     cursor = conexao.cursor(dictionary=True)
-
     try:
         cursor.execute(
             "INSERT INTO usuario (nome, cpf, email, senha) VALUES (%s, %s, %s, %s)",
-            (nome, cpf, email, senha_hash.decode('utf-8'))
+            (data.nome, data.cpf, data.email, senha_hash.decode('utf-8'))
         )
         conexao.commit()
 
-        id_novo = cursor.lastrowid
-
         # Busca o usuário recém-criado
-        cursor.execute("SELECT * FROM usuario WHERE email = %s", (email,))
+        cursor.execute("SELECT * FROM usuario WHERE email = %s", (data.email,))
         u = cursor.fetchone()
 
         usuario = {
@@ -90,29 +152,19 @@ def cadastro():
             "cpf": u["cpf"],
             "primeiro_login": u["primeiro_login"]
         }
-
-        return jsonify(usuario), 201
+        return usuario
 
     except mysql.connector.Error as e:
         conexao.rollback()
-        return jsonify({"erro": str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
         cursor.close()
         conexao.close()
 
 
 # ======== ROTA: LOGIN ==========
-@app.route('/login', methods=['POST'])
-def login():
-    data = request.get_json(force=True)
-    if not data:
-        return jsonify({"erro": "JSON inválido"}), 400
-
-    email = data.get("email")
-    senha = data.get("senha")
-    if not email or not senha:
-        return jsonify({"erro": "Informe email e senha"}), 400
-
+@app.post('/login')
+async def login(data: LoginBody):
     conexao = get_connection()
     cursor = conexao.cursor(dictionary=True)
     try:
@@ -123,13 +175,13 @@ def login():
             LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario
             WHERE u.email = %s
         """
-        cursor.execute(query, (email,))
+        cursor.execute(query, (data.email,))
         usuario = cursor.fetchone()
         if not usuario:
-            return jsonify({"erro": "Usuário não encontrado"}), 404
+            raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
         # valida senha
-        if bcrypt.checkpw(senha.encode('utf-8'), usuario["senha"].encode('utf-8')):
+        if bcrypt.checkpw(data.senha.encode('utf-8'), usuario["senha"].encode('utf-8')):
             newUsuario = {
                 "id": usuario["id_usuario"],
                 "nome": usuario["nome"],
@@ -146,28 +198,19 @@ def login():
                     "disponibilidade": usuario["disponibilidade"]
                 }
 
-            return jsonify(newUsuario), 200
+            return newUsuario
         else:
-            return jsonify({"erro": "Senha incorreta"}), 401
+            raise HTTPException(status_code=401, detail="Senha incorreta")
 
     except Exception as e:
-        return jsonify({"erro": str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
         cursor.close()
         conexao.close()
 
 
-
-@app.route('/has-terapeuta', methods=['POST'])
-def hasTerapeuta():
-    data = request.get_json(force=True)
-    if not data:
-        return jsonify({"erro": "JSON inválido"}), 400
-
-    id = data.get("id")
-    if not id:
-        return jsonify({"erro": "Informe o id"}), 400
-
+@app.post('/has-terapeuta')
+async def has_terapeuta(data: IdBody):
     conexao = get_connection()
     cursor = conexao.cursor(dictionary=True)
     try:
@@ -177,36 +220,26 @@ def hasTerapeuta():
             LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario
             WHERE u.id_usuario = %s
         """
-        cursor.execute(query, (id,))
+        cursor.execute(query, (data.id,))
         usuario = cursor.fetchone()
         if not usuario:
-            return jsonify({"erro": "Usuário não encontrado"}), 404
-
+            raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
         if usuario["CRP"]:
             user = {
                 "CRP": usuario["CRP"],
             }
-            return jsonify(user), 200
-        return jsonify({"message": "Terapeuta não cadastrado"})
-
+            return user
+        return {"message": "Terapeuta não cadastrado"}
 
     except Exception as e:
-        return jsonify({"erro": str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
         cursor.close()
         conexao.close()
 
-@app.route('/load-user', methods=['POST'])
-def loadUser():
-    data = request.get_json(force=True)
-    if not data:
-        return jsonify({"erro": "JSON inválido"}), 400
-
-    email = data.get("email")
-    if not email:
-        return jsonify({"erro": "Informe email"}), 400
-
+@app.post('/load-user')
+async def load_user(data: EmailBody):
     conexao = get_connection()
     cursor = conexao.cursor(dictionary=True)
     try:
@@ -217,10 +250,10 @@ def loadUser():
             LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario
             WHERE u.email = %s
         """
-        cursor.execute(query, (email,))
+        cursor.execute(query, (data.email,))
         usuario = cursor.fetchone()
         if not usuario:
-            return jsonify({"erro": "Usuário não encontrado"}), 404
+            raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
         newUsuario = {
             "id": usuario["id_usuario"],
@@ -237,111 +270,84 @@ def loadUser():
                 "especialidade": usuario["especialidade"],
                 "disponibilidade": usuario["disponibilidade"]
             }
-
-        return jsonify(newUsuario), 200
+        return newUsuario
 
     except Exception as e:
-        return jsonify({"erro": str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
         cursor.close()
         conexao.close()
 
-@app.route('/primeiro-login', methods=['PUT'])
-def primeiroLogin():
-    data = request.get_json(force=True)
-    if not data:
-        return jsonify({"erro": "JSON inválido"}), 400
-
-    id = data.get("id")
-    if not id:
-        return jsonify({"erro": "Informe o id do usuário"}), 400
-
+@app.put('/primeiro-login')
+async def primeiro_login(data: IdBody):
     conexao = get_connection()
     cursor = conexao.cursor(dictionary=True)
     try:
-        cursor.execute("SELECT * FROM usuario WHERE id_usuario = %s", (id,))
+        cursor.execute("SELECT * FROM usuario WHERE id_usuario = %s", (data.id,))
         usuario = cursor.fetchone()
         if not usuario:
-            return jsonify({"erro": "Usuário não encontrado"}), 400
+            raise HTTPException(status_code=404, detail="Usuário não encontrado")
         
-        cursor.execute("UPDATE usuario SET primeiro_login = false WHERE id_usuario = %s", (id,))
+        cursor.execute("UPDATE usuario SET primeiro_login = false WHERE id_usuario = %s", (data.id,))
         conexao.commit()
-        return jsonify({"success": True}), 200
+        return {"success": True}
     except Exception as e:
-        return jsonify({"erro": str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
         cursor.close()
         conexao.close()
 
-@app.route('/cadastro-terapeuta', methods=['POST'])
-def cadastro_terapeuta():
-    data = request.json
-    id_usuario = data.get("id")
-    especialidade = data.get("especialidade")
-    crp = data.get("crp")
-    disponibilidade = data.get("disponibilidade")
-
-    if not all([id_usuario, especialidade, crp, disponibilidade]):
-        return jsonify({"erro": "Campos obrigatórios faltando"}), 400
-
+@app.post('/cadastro-terapeuta', status_code=status.HTTP_201_CREATED)
+async def cadastro_terapeuta(data: CadastroTerapeutaBody):
     conexao = get_connection()
     cursor = conexao.cursor()
     try:
         cursor.execute(
             "INSERT INTO terapeuta (id_usuario, especialidade, CRP, disponibilidade) VALUES (%s, %s, %s, %s)",
-            (id_usuario, especialidade, crp, disponibilidade)
+            (data.id, data.especialidade, data.crp, data.disponibilidade)
         )
         conexao.commit()
-        return jsonify({"mensagem": "Terapeuta cadastrado com sucesso!"}), 201
+        return {"mensagem": "Terapeuta cadastrado com sucesso!"}
     except Exception as e:
         conexao.rollback()
-        return jsonify({"erro": str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
         cursor.close()
         conexao.close()
 
-@app.route('/cadastro-usuario', methods=['PUT'])
-def cadastro_usuario():
-    data = request.json
-    id_usuario = data.get("id")
-    data_nascimento = data.get("data_nascimento")
-    endereco = data.get("endereco")
-    contato_emergencia = data.get("contato_emergencia")
-
-    if not all([id_usuario, data_nascimento, endereco, contato_emergencia]):
-        return jsonify({"erro": "Campos obrigatórios faltando"}), 400
-
+@app.put('/cadastro-usuario', status_code=status.HTTP_201_CREATED) # Nota: PUT geralmente retorna 200 OK ou 204 No Content. 201 é para POST.
+async def cadastro_usuario(data: CadastroUsuarioBody):
     conexao = get_connection()
     cursor = conexao.cursor()
     try:
         cursor.execute(
             "UPDATE usuario SET data_nascimento = %s, endereco = %s, contato_emergencia = %s WHERE id_usuario = %s",
-            (data_nascimento, endereco, contato_emergencia, id_usuario)
+            (data.data_nascimento, data.endereco, data.contato_emergencia, data.id)
         )
         conexao.commit()
-        return jsonify({"mensagem": "Usuário alterado com sucesso!"}), 201
+        return {"mensagem": "Usuário alterado com sucesso!"}
     except Exception as e:
         conexao.rollback()
-        return jsonify({"erro": str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
         cursor.close()
         conexao.close()
 
-@app.route('/terapeutas', methods=['GET'])
-def listarTerapeutas():
+@app.get('/terapeutas')
+async def listar_terapeutas(
+    page: int = 1,
+    limit: int = 20,
+    especialidade: Optional[str] = None
+):
     conexao = get_connection()
     cursor = conexao.cursor(dictionary=True)
     
-    # Essa parte eu não sabia, peguei com Gemini, veja se está certo!!!!!*(Mas pelo que entendi, default = 1 é qual página o usuário esta, e o default 20 é o limite de terapeutas por página...Creio que seja isso)
-    page = request.args.get('page', default=1, type=int)
-    limit = request.args.get('limit', default=20, type=int)
     offset = (page - 1) * limit
-    especialidade = request.args.get('especialidade')
 
-    # Conta os terapeutas do banco de dadoss (Bd não é o meu forte ainda)
+    # Conta os terapeutas
     count_query = "SELECT COUNT(*) AS total FROM usuario u LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario WHERE t.id_usuario IS NOT NULL"
-    print(count_query)
-    # Aqui é para puxar os dados do banco de dados
+    
+    # Puxa os dados
     data_query_base = """
         SELECT 
             u.id_usuario, 
@@ -358,7 +364,6 @@ def listarTerapeutas():
     
     params = []
     
-    # Peguei com ajuda da INTERNET essa parte
     if especialidade:
         count_query += " AND t.especialidade LIKE %s"
         data_query_base += " AND t.especialidade LIKE %s"
@@ -385,45 +390,36 @@ def listarTerapeutas():
             },
             "terapeutas": terapeutas
         }
-
-        return jsonify(response), 200
+        return response
 
     except Exception as e:
-        return jsonify({"erro": f"Erro ao listar terapeutas: {str(e)}"}), 500
-
+        raise HTTPException(status_code=500, detail=f"Erro ao listar terapeutas: {str(e)}")
     finally:
         cursor.close()
         conexao.close()
 
-@app.route('/favoritar', methods=['POST'])
-def favoritar_terapeuta():
+@app.post('/favoritar', status_code=status.HTTP_201_CREATED)
+async def favoritar_terapeuta(data: FavoritarBody):
     conexao = get_connection()
     cursor = conexao.cursor()
-    try:
-        data = request.get_json()
-        id_usuario = data['id_usuario']
-        id_terapeuta = data['id_terapeuta']
-    except Exception as e:
-        return jsonify({"erro": "Dados inválidos: id_usuario e id_terapeuta são obrigatórios."}), 400
 
     query = """
     INSERT INTO usuario_salva_terapeuta (id_usuario, id_terapeuta)
     VALUES (%s, %s)
     """
-
     try:
-        cursor.execute(query, (id_usuario, id_terapeuta))
+        cursor.execute(query, (data.id_usuario, data.id_terapeuta))
         conexao.commit()
-        return jsonify({"mensagem": "Terapeuta favoritado com sucesso!"}), 201
+        return {"mensagem": "Terapeuta favoritado com sucesso!"}
     except Exception as e:
         conexao.rollback()
-        return jsonify({"erro": f"Erro ao favoritar terapeuta: {str(e)}"}), 500
+        raise HTTPException(status_code=500, detail=f"Erro ao favoritar terapeuta: {str(e)}")
     finally:
         cursor.close()
         conexao.close()
 
-@app.route('/usuarios/<int:id_usuario>/terapeutas', methods=['GET'])
-def listar_terapeutas_por_usuario(id_usuario):
+@app.get('/usuarios/{id_usuario}/terapeutas')
+async def listar_terapeutas_por_usuario(id_usuario: int):
     conexao = get_connection()
     cursor = conexao.cursor(dictionary=True)
     query = """
@@ -446,15 +442,15 @@ def listar_terapeutas_por_usuario(id_usuario):
     try:
         cursor.execute(query, (id_usuario,))
         terapeutas_favoritos = cursor.fetchall()
-        return jsonify(terapeutas_favoritos), 200
+        return terapeutas_favoritos
     except Exception as e:
-        return jsonify({"erro": f"Erro ao listar terapeutas favoritos: {str(e)}"}), 500
+        raise HTTPException(status_code=500, detail=f"Erro ao listar terapeutas favoritos: {str(e)}")
     finally:
         cursor.close()
         conexao.close()
 
-@app.route('/terapeuta/<int:id_terapeuta>/usuarios', methods=['GET'])
-def listar_usuarios_por_terapeuta(id_terapeuta):
+@app.get('/terapeuta/{id_terapeuta}/usuarios')
+async def listar_usuarios_por_terapeuta(id_terapeuta: int):
     conexao = get_connection()
     cursor = conexao.cursor(dictionary=True)
     query = """
@@ -472,41 +468,40 @@ def listar_usuarios_por_terapeuta(id_terapeuta):
     try:
         cursor.execute(query, (id_terapeuta,))
         usuarios_que_favoritaram = cursor.fetchall()
-        return jsonify(usuarios_que_favoritaram), 200
-    except NameError as e:
-        return jsonify({"erro": f"Erro ao listar usuários que favoritaram: {str(e)}"}), 500
+        return usuarios_que_favoritaram
+    except NameError as e: # O original tinha NameError, mas Exception é mais seguro
+        raise HTTPException(status_code=500, detail=f"Erro ao listar usuários que favoritaram: {str(e)}")
     finally:
         cursor.close()
         conexao.close()
 
-@app.route('/atualizar-usuario/<int:id_usuario>', methods=['PUT'])
-def atualizar_usuario(id_usuario):
-    data = request.json
-    if not data:
-        return jsonify({"erro": "Nenhum dado enviado"}), 400
+@app.put('/atualizar-usuario/{id_usuario}')
+async def atualizar_usuario(id_usuario: int, data: AtualizarUsuarioBody):
+    # Pega apenas os campos que foram enviados (não None)
+    dados_atualizar = data.model_dump(exclude_unset=True)
+    
+    if not dados_atualizar:
+        raise HTTPException(status_code=400, detail="Nenhum dado fornecido para atualização.")
+
     set_clauses = []
     params = [] 
-    dados = {
-        "nome": data.get("nome"),
-        "email": data.get("email"),
-        "data_nascimento": data.get("data_nascimento"),
-        "endereco": data.get("endereco"),
-        "contato_emergencia": data.get("contato_emergencia")
-    }
-    senha = data.get("senha")
-    for dado, valor in dados.items():
-        if valor is not None:
-            set_clauses.append(f"{dado} = %s")
-            params.append(valor)
-    if senha:
+
+    if "senha" in dados_atualizar:
+        senha = dados_atualizar.pop("senha") # Remove para não ser processado no loop
         try:
             senha_hash = bcrypt.hashpw(senha.encode('utf-8'), bcrypt.gensalt())
             set_clauses.append("senha = %s") 
             params.append(senha_hash.decode('utf-8'))
         except Exception as e:
-            return jsonify({"erro": f"Erro ao processar senha: {str(e)}"}), 500
-    if not set_clauses:
-        return jsonify({"mensagem": "Nenhum dado fornecido para atualização."}), 400
+            raise HTTPException(status_code=500, detail=f"Erro ao processar senha: {str(e)}")
+
+    for key, value in dados_atualizar.items():
+        set_clauses.append(f"{key} = %s")
+        params.append(value)
+    
+    if not set_clauses: # Caso apenas a senha tenha sido enviada e falhado
+        raise HTTPException(status_code=400, detail="Nenhum dado válido para atualização.")
+
     atualizacao = ", ".join(set_clauses)
     query = f"""
     UPDATE 
@@ -525,47 +520,42 @@ def atualizar_usuario(id_usuario):
        cursor.execute(query, params)
        conexao.commit()
        if cursor.rowcount == 0:
-           return jsonify({"erro": "Usuário não encontrado"}), 404
-       return jsonify({"mensagem": "Usuário atualizado com sucesso!"}), 200
+           raise HTTPException(status_code=404, detail="Usuário não encontrado")
+       return {"mensagem": "Usuário atualizado com sucesso!"}
     except Exception as e:
         conexao.rollback()
-        return jsonify({"erro": f"Erro ao atualizar usuário: {str(e)}"}), 500
+        raise HTTPException(status_code=500, detail=f"Erro ao atualizar usuário: {str(e)}")
     finally:
         cursor.close()
         conexao.close()
 
     
-@app.route('/sessao', methods=['POST'])
-def criarSessao():
+@app.post('/sessao', status_code=status.HTTP_201_CREATED)
+async def criar_sessao(data: CriarSessaoBody):
     conexao = get_connection()
     cursor = conexao.cursor()
-    try:
-        data = request.get_json()
-        id_usuario = data['id_usuario']
-        id_terapeuta = data['id_terapeuta']
-        data_hora_agendamento = data['data_hora_agendamento']
-
-    except Exception as e:
-        return jsonify({"erro": "Dados inválidos: id_usuario, id_terapeuta e data_hora_agendamento são obrigatórios. "}), 400
-
+    
     query = """
     INSERT INTO sessao (id_usuario, id_terapeuta, data_hora_agendamento)
     VALUES (%s, %s, %s)
     """
 
     try:
-        cursor.execute(query, (id_usuario, id_terapeuta, data_hora_agendamento))
+        cursor.execute(query, (data.id_usuario, data.id_terapeuta, data.data_hora_agendamento))
         conexao.commit()
-        return jsonify({"mensagem": "Sessão criada com sucesso!"}), 201
+        return {"mensagem": "Sessão criada com sucesso!"}
     except Exception as e:
         conexao.rollback()
-        return jsonify({"erro": f"Erro ao favoritar terapeuta: {str(e)}"}), 500
+        raise HTTPException(status_code=500, detail=f"Erro ao criar sessão: {str(e)}")
     finally:
         cursor.close()
         conexao.close()
 
-@app.route('/sessoes/<string:tipo>/<int:id>', methods=['GET'])
-def listar_sessoes_terapeuta(tipo,id):
+@app.get('/sessoes/{tipo}/{id}')
+async def listar_sessoes(tipo: str, id: int):
+    if tipo not in ('terapeuta', 'usuario'):
+        raise HTTPException(status_code=400, detail="Tipo deve ser 'terapeuta' ou 'usuario'")
+
     conexao = get_connection()
     cursor = conexao.cursor(dictionary=True)
     queryT = """
@@ -613,15 +603,15 @@ def listar_sessoes_terapeuta(tipo,id):
     try:
         cursor.execute(query, (id,))
         sessoes = cursor.fetchall()
-        return jsonify(sessoes), 200
+        return sessoes
     except Exception as e:
-        return jsonify({"erro": f"Erro ao listar sessoes: {str(e)}"}), 500
+        raise HTTPException(status_code=500, detail=f"Erro ao listar sessoes: {str(e)}")
     finally:
         cursor.close()
         conexao.close()
 
-@app.route('/sessao/<int:id>', methods=['GET'])
-def get_sessao(id):
+@app.get('/sessao/{id}')
+async def get_sessao(id: int):
     conexao = get_connection()
     cursor = conexao.cursor(dictionary=True)
 
@@ -657,6 +647,10 @@ def get_sessao(id):
     try:
         cursor.execute(query, (id,))
         s = cursor.fetchone()
+        
+        if not s:
+            raise HTTPException(status_code=404, detail="Sessão não encontrada")
+
         sessao = {
             "id_sessao":s["id_sessao"],
             "tipo": s["tipo"],
@@ -678,74 +672,51 @@ def get_sessao(id):
                 "email": s["email_terapeuta"],
             }
         }
-        print(sessao)
-        if not sessao:
-            return jsonify({"erro": "Sessão não encontrada"}), 404
-        return jsonify(sessao), 200
+        return sessao
     except Exception as e:
-        return jsonify({"erro": f"Erro ao buscar sessão: {str(e)}"}), 500
+        raise HTTPException(status_code=500, detail=f"Erro ao buscar sessão: {str(e)}")
     finally:
         cursor.close()
         conexao.close()
 
 
-@app.route('/atualizar-sessao/<int:id_sessao>', methods=['PUT'])
-def atualizar_sessao(id_sessao):
-    data = request.json
-    if not data:
-        return jsonify({"erro": "Nenhum dado enviado"}), 400
-    
-    status = data.get("status")
-        
+@app.put('/atualizar-sessao/{id_sessao}')
+async def atualizar_sessao(id_sessao: int, data: AtualizarSessaoBody):
     query ="""
     UPDATE 
         sessao 
     SET status = %s
-         
     WHERE 
         id_sessao = %s
-        """
-    
-    
+    """
     conexao = get_connection()
     cursor = conexao.cursor()
-    
     try:
-       cursor.execute(query, (status,id_sessao))
+       cursor.execute(query, (data.status, id_sessao))
        conexao.commit()
        if cursor.rowcount == 0:
-           return jsonify({"erro": "Sessao nao encontrada"}), 404
-       return jsonify({"mensagem": "Sessao atualizada com sucesso!"}), 200
+           raise HTTPException(status_code=404, detail="Sessao nao encontrada")
+       return {"mensagem": "Sessao atualizada com sucesso!"}
     except Exception as e:
         conexao.rollback()
-        return jsonify({"erro": f"Erro ao atualizar sessao: {str(e)}"}), 500
+        raise HTTPException(status_code=500, detail=f"Erro ao atualizar sessao: {str(e)}")
     finally:
          cursor.close()
          conexao.close()
 
 
-@app.route('/atualizar-terapeuta/<int:id_usuario>', methods=['PUT'])
-def atualizar_terapeuta(id_usuario):
-    data = request.json
-    if not data:
-        return jsonify({"erro": "Nenhum dado enviado"}), 400
+@app.put('/atualizar-terapeuta/{id_usuario}')
+async def atualizar_terapeuta(id_usuario: int, data: AtualizarTerapeutaBody):
+    dados_atualizar = data.model_dump(exclude_unset=True)
+    if not dados_atualizar:
+        raise HTTPException(status_code=400, detail="Nenhum dado fornecido para atualização.")
 
     set_clauses = []
     params = []
 
-    dados = {
-        "especialidade": data.get("especialidade"),
-        "CRP": data.get("CRP"),
-        "disponibilidade": data.get("disponibilidade")
-    }
-
-    for dado, valor in dados.items():
-        if valor is not None:
-            set_clauses.append(f"{dado} = %s")
-            params.append(valor)
-
-    if not set_clauses:
-        return jsonify({"mensagem": "Nenhum dado fornecido para atualização."}), 400
+    for key, value in dados_atualizar.items():
+        set_clauses.append(f"{key} = %s")
+        params.append(value)
 
     atualizacao = ", ".join(set_clauses)
     query = f"""
@@ -765,16 +736,18 @@ def atualizar_terapeuta(id_usuario):
         cursor.execute(query, params)
         conexao.commit()
         if cursor.rowcount == 0:
-            return jsonify({"erro": "Terapeuta não encontrado"}), 404
-        return jsonify({"mensagem": "Terapeuta atualizado com sucesso!"}), 200
+            raise HTTPException(status_code=404, detail="Terapeuta não encontrado")
+        return {"mensagem": "Terapeuta atualizado com sucesso!"}
     except Exception as e:
         conexao.rollback()
-        return jsonify({"erro": f"Erro ao atualizar terapeuta: {str(e)}"}), 500
+        raise HTTPException(status_code=500, detail=f"Erro ao atualizar terapeuta: {str(e)}")
     finally:
         cursor.close()
         conexao.close()
 
 
 # ======== EXECUTAR API ==========
-if __name__ == "__main__":
-    app.run(debug=True)
+# Remova o `if __name__ == "__main__":`
+# Para rodar o servidor FastAPI, use o comando no seu terminal:
+# uvicorn main:app --reload
+# (Assumindo que este arquivo se chama main.py)
