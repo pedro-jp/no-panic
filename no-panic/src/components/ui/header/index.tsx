@@ -66,7 +66,7 @@ export const HeaderComponent = () => {
 
               {!user?.terapeuta?.CRP && (
                 <li>
-                  <Link href='/cadastro-terapeuta-psicologo'>
+                  <Link href={`/cadastro-terapeuta-psicologo/${user?.id}`}>
                     <button>
                       <BiUserPlus /> Terapeuta/Psicólogo
                     </button>
