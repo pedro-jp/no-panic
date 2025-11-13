@@ -123,7 +123,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     deleteCookie('user');
     setUser(null);
-    redirect('/');
+    window.location.href = '/';
   };
 
   return (

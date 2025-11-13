@@ -116,27 +116,47 @@ def login():
     conexao = get_connection()
     cursor = conexao.cursor(dictionary=True)
     try:
-        cursor.execute("SELECT * FROM usuario WHERE email = %s", (email,))
+        query = """
+            SELECT u.id_usuario, u.nome, u.email, u.cpf, u.primeiro_login, u.senha,
+                   t.especialidade, t.CRP, t.disponibilidade
+            FROM usuario u
+            LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario
+            WHERE u.email = %s
+        """
+        cursor.execute(query, (email,))
         usuario = cursor.fetchone()
         if not usuario:
             return jsonify({"erro": "Usuário não encontrado"}), 404
 
+        # valida senha
         if bcrypt.checkpw(senha.encode('utf-8'), usuario["senha"].encode('utf-8')):
             newUsuario = {
                 "id": usuario["id_usuario"],
                 "nome": usuario["nome"],
                 "email": usuario["email"],
                 "cpf": usuario["cpf"],
-                "primeiro_login": usuario["primeiro_login"]
+                "primeiro_login": usuario["primeiro_login"],
+                "terapeuta": None
             }
+
+            if usuario["CRP"]:
+                newUsuario["terapeuta"] = {
+                    "CRP": usuario["CRP"],
+                    "especialidade": usuario["especialidade"],
+                    "disponibilidade": usuario["disponibilidade"]
+                }
+
             return jsonify(newUsuario), 200
         else:
             return jsonify({"erro": "Senha incorreta"}), 401
+
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
     finally:
         cursor.close()
         conexao.close()
+
+
 
 @app.route('/has-terapeuta', methods=['POST'])
 def hasTerapeuta():

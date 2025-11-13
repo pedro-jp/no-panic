@@ -168,6 +168,12 @@
     li {
       width: 100%;
       display: flex;
+
+      .sair {
+        &:active {
+          transition: 0ms;
+        }
+      }
     }
 
     button {

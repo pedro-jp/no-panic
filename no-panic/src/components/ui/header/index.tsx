@@ -53,34 +53,36 @@ export const HeaderComponent = () => {
             sos
           </button>
 
-          <div className={styles.config}>
-            <Image src='/logo.png' alt='Perfil' width={20} height={20} />
-            <ul className={styles.content}>
-              <li>
-                <Link href='/perfil'>
-                  <button>
-                    <BiUser /> Perfil
-                  </button>
-                </Link>
-              </li>
-
-              {!user?.terapeuta?.CRP && (
+          {user && (
+            <div className={styles.config}>
+              <Image src='/logo.png' alt='Perfil' width={20} height={20} />
+              <ul className={styles.content}>
                 <li>
-                  <Link href={`/cadastro-terapeuta-psicologo/${user?.id}`}>
+                  <Link href='/perfil'>
                     <button>
-                      <BiUserPlus /> Terapeuta/Psicólogo
+                      <BiUser /> Perfil
                     </button>
                   </Link>
                 </li>
-              )}
 
-              <li>
-                <button onClick={logout}>
-                  <BiLogOut /> Sair
-                </button>
-              </li>
-            </ul>
-          </div>
+                {!user?.terapeuta?.CRP && (
+                  <li>
+                    <Link href={`/cadastro-terapeuta-psicologo/${user?.id}`}>
+                      <button>
+                        <BiUserPlus /> Terapeuta/Psicólogo
+                      </button>
+                    </Link>
+                  </li>
+                )}
+
+                <li>
+                  <button className={styles.sair} onClick={logout}>
+                    <BiLogOut /> Sair
+                  </button>
+                </li>
+              </ul>
+            </div>
+          )}
         </div>
       </menu>
 
