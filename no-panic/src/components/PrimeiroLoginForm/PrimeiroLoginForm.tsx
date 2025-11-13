@@ -85,10 +85,6 @@ export const PrimeiroLoginForm = ({ user }: PrimeiroLoginFormProps) => {
     }
   }, [cep]);
 
-  useEffect(() => {
-    console.log(endereco);
-  }, [endereco]);
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);

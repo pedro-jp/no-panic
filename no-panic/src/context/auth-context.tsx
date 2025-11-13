@@ -49,6 +49,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(JSON.parse(userCookie as string));
         } catch {
           deleteCookie('user');
+        } finally {
+          load();
         }
       }
     }
