@@ -62,29 +62,32 @@ export default function Page() {
 }
 const Favoritos = () => {
   const { user } = useAuth();
-  const [favoritos, setFavoritos] = React.useState<Terapeuta[]>();
+  const [favoritos, setFavoritos] = React.useState<Terapeuta[]>([]);
   const [loading, setLoading] = useState(false);
   const [agendar, setAgendar] = useState(false);
   const [dataAgendamento, setDataAgendamento] = useState('');
   const [horaAgendamento, setHoraAgendamento] = useState('');
 
-  const getFavoritos = async () => {
-    setLoading(true);
-    try {
-      const { data } = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URL}/usuarios/${user?.id}/terapeutas`
-      );
-      setFavoritos(data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Carrega do cache ao montar
   useEffect(() => {
+    const favoritosCache = localStorage.getItem('favoritos');
+    if (favoritosCache) setFavoritos(JSON.parse(favoritosCache));
+
     if (user) getFavoritos();
   }, [user]);
+
+  const getFavoritos = async () => {
+    if (!user) return;
+    try {
+      const { data } = await axios.get(
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/usuarios/${user.id}/terapeutas`
+      );
+      setFavoritos(data);
+      localStorage.setItem('favoritos', JSON.stringify(data)); // salva no localStorage
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const handleAgendar = async (id_terapeuta: number) => {
     if (!dataAgendamento || !horaAgendamento) {
@@ -94,7 +97,6 @@ const Favoritos = () => {
 
     setLoading(true);
 
-    // gera string "YYYY-MM-DD HH:mm:ss"
     const dataHoraFormatada = `${dataAgendamento} ${horaAgendamento}:00`;
 
     try {
@@ -114,6 +116,12 @@ const Favoritos = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFavoritar = (novoFavorito: Terapeuta) => {
+    const atualizados = [...favoritos, novoFavorito];
+    setFavoritos(atualizados);
+    localStorage.setItem('favoritos', JSON.stringify(atualizados)); // salva no localStorage
   };
 
   if (loading) return <Loader />;

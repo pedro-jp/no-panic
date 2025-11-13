@@ -22,8 +22,11 @@ const Page = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    // carrega do cache
+    const sessoesCache = localStorage.getItem('sessoes');
+    if (sessoesCache) setSessoes(JSON.parse(sessoesCache));
+
     const fetchData = async () => {
-      setLoading(true);
       if (user) {
         try {
           const data = await getSessoes(
@@ -31,10 +34,9 @@ const Page = () => {
             user?.id
           );
           setSessoes(data);
+          localStorage.setItem('sessoes', JSON.stringify(data)); // salva no cache
         } catch (err) {
-          console.error('Erro ao buscar sessões:');
-        } finally {
-          setLoading(false);
+          console.error('Erro ao buscar sessões:', err);
         }
       }
     };
