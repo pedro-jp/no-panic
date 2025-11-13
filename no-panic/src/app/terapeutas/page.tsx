@@ -7,7 +7,6 @@ import styles from './styles.module.css';
 import { Card } from '@/components/card';
 import axios from 'axios';
 import { AuthProvider, useAuth } from '@/context/auth-context';
-import { GridLoader } from 'react-spinners';
 import { Loader } from '@/components/loader/loader';
 
 export interface Terapeuta {
@@ -25,6 +24,18 @@ const PageContent = () => {
   const [favoritos, setFavoritos] = useState<Terapeuta[]>([]);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    // carrega terapeutas e favoritos do cache
+    const terapeutasCache = localStorage.getItem('terapeutas');
+    const favoritosCache = localStorage.getItem('favoritos');
+
+    if (terapeutasCache) setTerapeutas(JSON.parse(terapeutasCache));
+    if (favoritosCache) setFavoritos(JSON.parse(favoritosCache));
+
+    fetchTerapeutas();
+    fetchFavoritos();
+  }, []);
+
   // Buscar terapeutas
   const fetchTerapeutas = async () => {
     setLoading(true);
@@ -34,6 +45,7 @@ const PageContent = () => {
         : `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas`;
       const res = await axios.get(url);
       setTerapeutas(res.data.terapeutas);
+      localStorage.setItem('terapeutas', JSON.stringify(res.data.terapeutas));
     } catch (err) {
       console.error(err);
     } finally {
@@ -49,31 +61,24 @@ const PageContent = () => {
         `${process.env.NEXT_PUBLIC_SERVER_URL}/usuarios/${user.id}/terapeutas`
       );
       setFavoritos(data);
+      localStorage.setItem('favoritos', JSON.stringify(data));
     } catch (err) {
       console.error(err);
-    } finally {
     }
   };
 
   // Favoritar um terapeuta
   const handleFavoritar = (novoFavorito: Terapeuta) => {
-    setFavoritos((prev) => [...prev, novoFavorito]);
+    const atualizados = [...favoritos, novoFavorito];
+    setFavoritos(atualizados);
+    localStorage.setItem('favoritos', JSON.stringify(atualizados));
   };
 
-  // Effects
-  useEffect(() => {
-    fetchFavoritos();
-  }, [user]);
-
-  // Debounce simples para filtro
+  // Atualiza terapeutas ao filtrar
   useEffect(() => {
     const timer = setTimeout(fetchTerapeutas, 300);
     return () => clearTimeout(timer);
   }, [especialidade]);
-
-  useEffect(() => {
-    fetchTerapeutas();
-  }, []);
 
   return (
     <>
