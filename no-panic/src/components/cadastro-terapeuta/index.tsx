@@ -34,7 +34,7 @@ const TerapeutaForm = ({ id }: PageProps) => {
         }
       );
       if (response.status === 201) toast.success('Profissional cadastrado');
-      redirect('/');
+      window.location.href = '/';
     } catch (error) {
       console.log(error);
       toast.info('Cadastre novamente');
