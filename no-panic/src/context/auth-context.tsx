@@ -1,9 +1,10 @@
+'use client';
+
 import React, { useState, useEffect, useContext, ReactNode } from 'react';
 import { setCookie, getCookie, deleteCookie } from 'cookies-next';
-import { Terapeuta } from '@/app/terapeutas/page';
 import { redirect } from 'next/navigation';
+import { Terapeuta } from '@/app/terapeutas/page';
 
-// ===== Tipagem =====
 export interface User {
   id: number;
   nome: string;
@@ -15,41 +16,45 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, senha: string) => void;
-  load: () => void;
-  sign: (email: string, senha: string, cpf: string, nome: string) => void;
+  login: (email: string, senha: string) => Promise<void>;
+  sign: (
+    nome: string,
+    cpf: string,
+    email: string,
+    senha: string
+  ) => Promise<void>;
+  load: () => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
 
 interface AuthProviderProps {
   children: ReactNode;
+  initialUser?: User | null;
 }
 
-const SERVER = process.env.NEXT_PUBLIC_SERVER_URL;
-
-// ===== Contexto =====
+const SERVER = process.env.NEXT_PUBLIC_SERVER_URL!;
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
-const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Carrega usuário do cookie
+  // 🔹 Carrega cookie no cliente
   useEffect(() => {
-    const userCookie = getCookie('user');
-    if (userCookie) {
-      try {
-        setUser(JSON.parse(userCookie as string));
-      } catch (err) {
-        console.error('Erro ao ler cookie de usuário:', err);
-        deleteCookie('user');
-      } finally {
-        load();
+    if (!user) {
+      const userCookie = getCookie('user');
+      if (userCookie) {
+        try {
+          setUser(JSON.parse(userCookie as string));
+        } catch {
+          deleteCookie('user');
+        }
       }
     }
   }, []);
 
+  // 🔹 Cadastro
   const sign = async (
     nome: string,
     cpf: string,
@@ -57,101 +62,64 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     senha: string
   ) => {
     setIsLoading(true);
-
-    const data = {
-      nome,
-      cpf,
-      email,
-      senha,
-    };
-    console.log(data);
-
     try {
-      const response = await fetch(`${SERVER}/cadastro`, {
+      const res = await fetch(`${SERVER}/cadastro`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, cpf, email, senha }),
       });
+      if (!res.ok) throw new Error(await res.text());
 
-      if (!response.ok) {
-        const err = await response.text();
-        throw new Error(err || 'Erro ao cadastrar');
-      }
-
-      const usuario = await response.json();
-      setCookie('user', JSON.stringify(usuario), { maxAge: 60 * 60 * 24 * 7 }); // 7 dias
+      const usuario: User = await res.json();
+      setCookie('user', JSON.stringify(usuario), { maxAge: 60 * 60 * 24 * 7 });
       setUser(usuario);
-
       window.location.href = '/terapeutas';
     } finally {
       setIsLoading(false);
     }
   };
-  // ===== Funções =====
+
+  // 🔹 Login
   const login = async (email: string, senha: string) => {
-    setIsLoading(true);
     if (!email || !senha) return;
-
-    const data = {
-      email,
-      senha,
-    };
-
+    setIsLoading(true);
     try {
-      const response = await fetch(`${SERVER}/login`, {
+      const res = await fetch(`${SERVER}/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, senha }),
       });
+      if (!res.ok) throw new Error(await res.text());
 
-      if (!response.ok) {
-        const err = await response.text();
-        throw new Error(err || 'Erro ao entrar');
-      }
-      const usuario = await response.json();
-      setCookie('user', JSON.stringify(usuario), { maxAge: 60 * 60 * 24 * 7 }); // 7 dias
-      setUser(user);
+      const usuario: User = await res.json();
+      setCookie('user', JSON.stringify(usuario), { maxAge: 60 * 60 * 24 * 7 });
+      setUser(usuario);
       window.location.href = '/terapeutas';
-    } catch (err) {
-      console.error(err);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // 🔹 Recarregar user atualizado
   const load = async () => {
     if (!user?.email) return;
-
-    const data = {
-      email: user.email,
-    };
-
     try {
-      const response = await fetch(`${SERVER}/load-user`, {
+      const res = await fetch(`${SERVER}/load-user`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email }),
       });
+      if (!res.ok) throw new Error(await res.text());
 
-      if (!response.ok) {
-        const err = await response.text();
-        throw new Error(err || 'Erro ao entrar');
-      }
-      const usuario = await response.json();
-      setCookie('user', JSON.stringify(usuario), { maxAge: 60 * 60 * 24 * 7 }); // 7 dias
-      setUser(user);
+      const usuario: User = await res.json();
+      setCookie('user', JSON.stringify(usuario), { maxAge: 60 * 60 * 24 * 7 });
+      setUser(usuario);
     } catch (err) {
-      console.error(err);
-    } finally {
+      console.error('Erro ao atualizar usuário:', err);
     }
   };
 
+  // 🔹 Logout
   const logout = () => {
     deleteCookie('user');
     setUser(null);
@@ -160,20 +128,16 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, login, load, sign, logout, isLoading }}
+      value={{ user, login, sign, load, logout, isLoading }}
     >
       {children}
     </AuthContext.Provider>
   );
 };
 
-// ===== Hook personalizado =====
-const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
-  }
-  return context;
+// Hook customizado
+export const useAuth = (): AuthContextType => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+  return ctx;
 };
-
-export { AuthProvider, useAuth };

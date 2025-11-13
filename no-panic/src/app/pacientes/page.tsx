@@ -78,7 +78,6 @@ const Pacientes = () => {
         `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeuta/${user?.id}/usuarios`
       );
       setPacientes(data);
-      console.log(pacientes);
     } catch (e) {
     } finally {
       setLoading(false);

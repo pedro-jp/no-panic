@@ -5,9 +5,12 @@ from mysql.connector import pooling
 import bcrypt
 from dotenv import load_dotenv
 import os
+import time
 
 # Carrega o .env
 load_dotenv()
+
+
 
 DB_HOST = os.getenv("DB_HOST")
 DB_USER = os.getenv("DB_USER")
@@ -46,6 +49,9 @@ def get_connection():
 # ROTAS (todo o resto do teu código, sem mudanças)
 # =====================================================
 
+@app.before_request
+def simular_delay():
+    time.sleep(3)  # 3 segundos de espera em todas as rotas
 @app.route('/', methods=['GET'])
 def home():
     return render_template("index.html")

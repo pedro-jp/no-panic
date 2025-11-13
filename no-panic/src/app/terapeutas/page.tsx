@@ -38,7 +38,6 @@ const PageContent = () => {
 
   // Buscar terapeutas
   const fetchTerapeutas = async () => {
-    setLoading(true);
     try {
       const url = especialidade
         ? `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas?especialidade=${especialidade}`
@@ -49,7 +48,6 @@ const PageContent = () => {
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
     }
   };
 
@@ -76,8 +74,18 @@ const PageContent = () => {
 
   // Atualiza terapeutas ao filtrar
   useEffect(() => {
-    const timer = setTimeout(fetchTerapeutas, 300);
-    return () => clearTimeout(timer);
+    if (especialidade) {
+      setLoading(true);
+      const timer = setTimeout(async () => {
+        try {
+          await fetchTerapeutas();
+        } catch (error) {
+        } finally {
+          setLoading(false);
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
   }, [especialidade]);
 
   return (

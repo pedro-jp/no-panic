@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
-import { LoadUserProvider } from '@/components/LoadUserProvider/LoadUserProvider';
-import { PrimeiroLoginForm } from '@/components/PrimeiroLoginForm/PrimeiroLoginForm';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { AuthProvider } from '@/context/auth-context';
+import { PrimeiroLoginForm } from '@/components/PrimeiroLoginForm/PrimeiroLoginForm';
 import { User } from '@/context/auth-context';
 
 const geistSans = Geist({
@@ -29,46 +29,35 @@ export const metadata: Metadata = {
   },
 };
 
-const loadUser = async () => {
-  const cookie = await cookies();
-  const cookieUser = cookie.get('user');
-  let user: User | undefined;
-  if (cookieUser) {
-    try {
-      user = JSON.parse(cookieUser.value) as User;
-    } catch {
-      user = undefined;
-    }
-  }
+// SSR — lê cookie do servidor
+async function loadUser(): Promise<User | null> {
+  const cookieStore = cookies();
+  const cookieUser = (await cookieStore).get('user');
+  if (!cookieUser) return null;
 
-  if (user) {
-    return user;
+  try {
+    return JSON.parse(cookieUser.value) as User;
+  } catch {
+    return null;
   }
-};
+}
 
 export default async function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   const user = await loadUser();
-  if (user) {
-    return (
-      <html lang='pt-BR'>
-        <body className={`${geistSans.variable} ${geistMono.variable}`}>
-          {user?.primeiro_login ? <PrimeiroLoginForm user={user} /> : ''}
-          <LoadUserProvider />
-          {children}
-          <ToastContainer position='top-right' autoClose={3000} />
-        </body>
-      </html>
-    );
-  }
+
   return (
     <html lang='pt-BR'>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        {children}
-        <ToastContainer position='top-right' autoClose={3000} />
+        <AuthProvider>
+          {user?.nome}
+          {user?.primeiro_login ? <PrimeiroLoginForm user={user} /> : null}
+          {children}
+          <ToastContainer position='top-right' autoClose={3000} />
+        </AuthProvider>
       </body>
     </html>
   );
