@@ -1,6 +1,6 @@
 import { SessaoCompleta } from '@/types/types';
 import React from 'react';
-import { VideoCall } from '../../../../../components/chamada/chamada';
+import { VideoCall } from '../../../../components/chamada/chamada';
 
 interface PageProps {
   id_sessao: string;
@@ -8,7 +8,7 @@ interface PageProps {
   id_usuario: string;
 }
 
-const fetchSessao = async (id_sessao: number) => {
+const fetchSessao = async (id_sessao: string) => {
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_SERVER_URL}/sessao/${id_sessao}`,
@@ -41,7 +41,7 @@ const identificarPapel = (sessao: SessaoCompleta, nome: string) => {
 const Page = async ({ params }: { params: PageProps }) => {
   const { id_sessao, nome } = params;
   const nomeDecodificado = decodeURIComponent(nome);
-  const sessao = await fetchSessao(Number(id_sessao));
+  const sessao = await fetchSessao(id_sessao);
 
   if (!sessao) return <div>Erro ao carregar sessão.</div>;
 

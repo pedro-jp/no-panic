@@ -1,4 +1,5 @@
 import { Status, Tipo } from '@/enums/enums';
+import { UUID } from 'crypto';
 
 export interface Sessao {
   id_sessao: number;
@@ -11,6 +12,7 @@ export interface Sessao {
   data_hora_fim?: Date;
   duracao?: number;
   tipo?: Tipo;
+  uuid: UUID;
 }
 
 export type SessaoCompleta = {

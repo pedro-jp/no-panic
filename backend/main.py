@@ -474,7 +474,7 @@ async def listar_sessoes(request: Request, tipo: str, id: int):
     SELECT 
         u.id_usuario, u.nome, u.email,
         s.status, s.data_hora_agendamento, s.data_hora_inicio,
-        s.data_hora_fim, s.duracao, s.id_sessao, s.tipo
+        s.data_hora_fim, s.duracao, s.id_sessao, s.tipo, BIN_TO_UUID(s.uuid) as uuid
     FROM sessao s
     """
 
@@ -487,12 +487,13 @@ async def listar_sessoes(request: Request, tipo: str, id: int):
         async with conn.cursor(aiomysql.DictCursor) as cursor:
             try:
                 await cursor.execute(query, (id,))
-                return await cursor.fetchall()
+                sessoes = await cursor.fetchall()
+                return sessoes
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Erro ao listar sessoes: {str(e)}")
 
 @app.get('/sessao/{id}')
-async def get_sessao(request: Request, id: int):
+async def get_sessao(request: Request, id: str):
     pool = request.app.state.pool
     query = """
     SELECT 
@@ -503,7 +504,7 @@ async def get_sessao(request: Request, id: int):
     FROM sessao s
     JOIN usuario u ON s.id_usuario = u.id_usuario
     JOIN usuario t ON s.id_terapeuta = t.id_usuario
-    WHERE s.id_sessao = %s
+    WHERE s.uuid = UUID_TO_BIN(%s)
     LIMIT 1
     """
     

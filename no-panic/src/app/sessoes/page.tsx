@@ -116,10 +116,9 @@ const Page = () => {
                         </span>
                       </h3>
                     </div>
-
                     <div className={styles.cardActions}>
                       <Link
-                        href={`/chamada/${sessao.id_sessao}/${user?.nome}/${sessao.id_usuario}`}
+                        href={`/chamada/${sessao.uuid}/${user?.nome}`}
                         // onClick={() => handleCall(sessao.id_usuario)}
                         className={styles.btnPrimary}
                       >
