@@ -44,6 +44,8 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } catch (err) {
         console.error('Erro ao ler cookie de usuário:', err);
         deleteCookie('user');
+      } finally {
+        load();
       }
     }
   }, []);
@@ -78,7 +80,11 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error(err || 'Erro ao cadastrar');
       }
 
-      login(email, senha);
+      const usuario = await response.json();
+      setCookie('user', JSON.stringify(usuario), { maxAge: 60 * 60 * 24 * 7 }); // 7 dias
+      setUser(usuario);
+
+      window.location.href = '/terapeutas';
     } finally {
       setIsLoading(false);
     }
@@ -118,7 +124,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const load = async () => {
-    setIsLoading(true);
     if (!user?.email) return;
 
     const data = {
@@ -144,7 +149,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (err) {
       console.error(err);
     } finally {
-      setIsLoading(false);
     }
   };
 

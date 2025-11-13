@@ -6,6 +6,7 @@ import { LoadUserProvider } from '@/components/LoadUserProvider/LoadUserProvider
 import { PrimeiroLoginForm } from '@/components/PrimeiroLoginForm/PrimeiroLoginForm';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { User } from '@/context/auth-context';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -28,12 +29,6 @@ export const metadata: Metadata = {
   },
 };
 
-export interface User {
-  id: number;
-  email: string;
-  primeiro_login: number;
-}
-
 const loadUser = async () => {
   const cookie = await cookies();
   const cookieUser = cookie.get('user');
@@ -51,37 +46,6 @@ const loadUser = async () => {
   }
 };
 
-const load = async (email: string) => {
-  if (!email) return;
-
-  const data = {
-    email,
-  };
-
-  try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_SERVER_URL}/load-user`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      }
-    );
-
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(err || 'Erro ao entrar');
-    }
-    const user = (await response.json()) as User;
-
-    return user;
-  } catch (err) {
-    console.error(err);
-  }
-};
-
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -89,15 +53,10 @@ export default async function RootLayout({
 }>) {
   const user = await loadUser();
   if (user) {
-    const usuario = await load(user?.email);
     return (
       <html lang='pt-BR'>
         <body className={`${geistSans.variable} ${geistMono.variable}`}>
-          {usuario?.primeiro_login === 1 ? (
-            <PrimeiroLoginForm user={user} />
-          ) : (
-            ''
-          )}
+          {user?.primeiro_login ? <PrimeiroLoginForm user={user} /> : ''}
           <LoadUserProvider />
           {children}
           <ToastContainer position='top-right' autoClose={3000} />

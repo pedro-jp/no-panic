@@ -65,21 +65,38 @@ def cadastro():
     senha_hash = bcrypt.hashpw(senha.encode('utf-8'), bcrypt.gensalt())
 
     conexao = get_connection()
-    cursor = conexao.cursor()
+    cursor = conexao.cursor(dictionary=True)
 
     try:
         cursor.execute(
             "INSERT INTO usuario (nome, cpf, email, senha) VALUES (%s, %s, %s, %s)",
             (nome, cpf, email, senha_hash.decode('utf-8'))
         )
-        id_usuario = cursor.lastrowid
-        return jsonify({"mensagem": "Usuário cadastrado com sucesso!"}), 201
+        conexao.commit()
+
+        id_novo = cursor.lastrowid
+
+        # Busca o usuário recém-criado
+        cursor.execute("SELECT * FROM usuario WHERE email = %s", (email,))
+        u = cursor.fetchone()
+
+        usuario = {
+            "id": u["id_usuario"],
+            "nome": u["nome"],
+            "email": u["email"],
+            "cpf": u["cpf"],
+            "primeiro_login": u["primeiro_login"]
+        }
+
+        return jsonify(usuario), 201
+
     except mysql.connector.Error as e:
         conexao.rollback()
         return jsonify({"erro": str(e)}), 500
     finally:
         cursor.close()
         conexao.close()
+
 
 # ======== ROTA: LOGIN ==========
 @app.route('/login', methods=['POST'])

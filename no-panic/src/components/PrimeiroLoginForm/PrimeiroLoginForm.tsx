@@ -4,8 +4,8 @@ import { Modal } from '../modal/Modal';
 import styles from './styles.module.css';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input-com-label';
-import { User } from '@/app/layout';
 import { setCookie } from 'cookies-next';
+import { User } from '@/context/auth-context';
 
 interface Address {
   cep: string;
@@ -124,7 +124,7 @@ export const PrimeiroLoginForm = ({ user }: PrimeiroLoginFormProps) => {
           }
         );
         load();
-        window.location.href = '/terapeutas';
+        window.location.href = '/';
       }
     } catch (error) {
       console.log(error);
@@ -156,10 +156,11 @@ export const PrimeiroLoginForm = ({ user }: PrimeiroLoginFormProps) => {
         const err = await response.text();
         throw new Error(err || 'Erro ao entrar');
       }
-      const { usuario } = await response.json();
+      const usuario = await response.json();
       setCookie('user', JSON.stringify(usuario), { maxAge: 60 * 60 * 24 * 7 }); // 7 dias
     } catch (err) {
       console.error(err);
+    } finally {
     }
   };
 

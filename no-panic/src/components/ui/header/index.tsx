@@ -1,15 +1,17 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import styles from './styles.module.css';
 import Image from 'next/image';
 import Link from 'next/link';
 import { IoClose, IoHeart, IoMenu } from 'react-icons/io5';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { BiLogOut, BiUser, BiUserPlus } from 'react-icons/bi';
+import { getCookie } from 'cookies-next';
 
 export const HeaderComponent = () => {
   const { user, logout } = useAuth();
+
   return (
     <header className={styles.header}>
       <menu>
@@ -18,10 +20,12 @@ export const HeaderComponent = () => {
           <IoMenu className={styles.closed} />
           <IoClose className={styles.open} />
         </div>
+
         <Link href='/' className={styles.logo}>
           <Image src='/logo_azul_sf.png' alt='logo' height={30} width={30} />
           <h4>No Panic</h4>
         </Link>
+
         <ul>
           <li>
             <Link href='/terapeutas'>Terapeutas</Link>
@@ -36,27 +40,24 @@ export const HeaderComponent = () => {
             </li>
           )}
           <li>
-            <Link
-              href='/sessoes
-            '
-            >
-              Sessões
-            </Link>
+            <Link href='/sessoes'>Sessões</Link>
           </li>
           <li>
             <Link href='#'>Chat</Link>
           </li>
         </ul>
+
         <div className={styles.sos_perfil}>
           <button className={styles.sos_btn}>
             <IoHeart color='red' />
             sos
           </button>
+
           <div className={styles.config}>
             <Image src='/logo.png' alt='Perfil' width={20} height={20} />
             <ul className={styles.content}>
               <li>
-                <Link href={'/perfil'}>
+                <Link href='/perfil'>
                   <button>
                     <BiUser /> Perfil
                   </button>
@@ -64,15 +65,17 @@ export const HeaderComponent = () => {
               </li>
 
               {!user?.terapeuta?.CRP && (
-                <Link href={'/cadastro-terapeuta-psicologo'}>
-                  <button>
-                    <BiUserPlus />
-                    Terapeuta/Psicólogo
-                  </button>
-                </Link>
+                <li>
+                  <Link href='/cadastro-terapeuta-psicologo'>
+                    <button>
+                      <BiUserPlus /> Terapeuta/Psicólogo
+                    </button>
+                  </Link>
+                </li>
               )}
+
               <li>
-                <button onClick={() => logout()}>
+                <button onClick={logout}>
                   <BiLogOut /> Sair
                 </button>
               </li>
@@ -80,6 +83,7 @@ export const HeaderComponent = () => {
           </div>
         </div>
       </menu>
+
       <nav>
         <ul className={styles.ul_mobile}>
           <li>
@@ -95,12 +99,7 @@ export const HeaderComponent = () => {
             </li>
           )}
           <li>
-            <Link
-              href='/sessoes
-            '
-            >
-              Sessões
-            </Link>
+            <Link href='/sessoes'>Sessões</Link>
           </li>
           <li>
             <Link href='#'>Chat</Link>
