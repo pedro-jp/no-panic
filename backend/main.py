@@ -129,6 +129,12 @@ class AtualizarTerapeutaBody(BaseModel):
     CRP: Optional[str] = None
     disponibilidade: Optional[str] = None
 
+class CriarTermoBody(BaseModel):
+    tipo: str
+    versao: str
+    titulo: str
+    conteudo: str
+
 # =====================================================
 # ROTAS
 # =====================================================
@@ -577,6 +583,34 @@ async def atualizar_terapeuta(request: Request, id_usuario: int, data: Atualizar
                 return {"mensagem": "Terapeuta atualizado com sucesso!"}
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Erro ao atualizar terapeuta: {str(e)}")
+
+@app.post('/termos',status_code=status.HTTP_201_CREATED)
+async def criar_termo(request: Request, data: CriarTermoBody):
+    pool = request.app.state.pool
+
+    if data.tipo not in ['privacidade', 'uso']:
+        raise HTTPException(
+            status_code=400, 
+            detail="Tipo deve ser 'privacidade' ou 'uso'"
+            )
+    
+    async with pool.acquire() as conn:
+        async with conn.cursor() as cursor:
+            try:
+                query = """ 
+                INSERT INTO termos 
+                (tipo, versao, titulo, conteudo)
+                VALUES (%s,%s,%s,%s)
+                """
+                await cursor.execute(query, (data.tipo, data.versao, data.titulo, data.conteudo))
+                await conn.commit()
+                return {
+                    "mensagem": "Termo criado com sucesso!", 
+                    "id": cursor.lastrowid
+                }
+            except Exception as e:
+                await conn.rollback()
+                raise HTTPException(status_code=500, detail=f"Erro ao criar termo: {str(e)}")
 
 # Para rodar:
 # uvicorn main:app --reload
