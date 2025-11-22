@@ -8,6 +8,7 @@ import { Card } from '@/components/card';
 import axios from 'axios';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { Loader } from '@/components/loader/loader';
+import Pagination from '@mui/material/Pagination';
 
 export interface Terapeuta {
   nome: string;
@@ -17,6 +18,13 @@ export interface Terapeuta {
   disponibilidade: string;
 }
 
+export interface PageMetadata {
+  current_page: number;
+  limit: number;
+  total_pages: number;
+  total_records: number;
+}
+
 const PageContent = () => {
   const { user } = useAuth();
   const [terapeutas, setTerapeutas] = useState<Terapeuta[]>([]);
@@ -24,41 +32,32 @@ const PageContent = () => {
   const [favoritos, setFavoritos] = useState<Terapeuta[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
-  const [firstLoad, setFirstLoad] = useState(true);
+  const [metadata, setMetadata] = useState<PageMetadata>();
 
-  useEffect(() => {
-    // carrega terapeutas e favoritos do cache
-    const terapeutasCache = localStorage.getItem('terapeutas');
-    const favoritosCache = localStorage.getItem('favoritos');
-
-    if (terapeutasCache) setTerapeutas(JSON.parse(terapeutasCache));
-    if (favoritosCache) setFavoritos(JSON.parse(favoritosCache));
-
-    fetchTerapeutas();
-    fetchFavoritos();
-    setFirstLoad(false);
-  }, [page]);
-
-  useEffect(() => {
-    if (!firstLoad) {
-      setLoading(true);
-      try {
-        fetchTerapeutas();
-        fetchFavoritos();
-      } finally {
-        setLoading(false);
-      }
-    }
-  }, [page]);
-
-  // Buscar terapeutas
-  const fetchTerapeutas = async () => {
+  // ---------------------------
+  // Buscar terapeutas paginados
+  // ---------------------------
+  const fetchTerapeutas = async (pageNumber: number) => {
     try {
-      const url = especialidade
-        ? `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas?especialidade=${especialidade}&page=${page}&limit=9`
-        : `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas?page=${page}&limit=9`;
+      const baseUrl = `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas`;
+
+      const params = new URLSearchParams({
+        page: String(pageNumber),
+        limit: '9', // fixo como você pediu
+      });
+
+      if (especialidade) {
+        params.append('especialidade', especialidade);
+      }
+
+      const url = `${baseUrl}?${params.toString()}`;
+
       const res = await axios.get(url);
+
       setTerapeutas(res.data.terapeutas);
+      setMetadata(res.data.metadata);
+
+      // Mantém localStorage
       localStorage.setItem('terapeutas', JSON.stringify(res.data.terapeutas));
     } catch (err) {
       console.error(err);
@@ -66,13 +65,17 @@ const PageContent = () => {
     }
   };
 
-  // Buscar favoritos do usuário
+  // ---------------------
+  // Buscar favoritos
+  // ---------------------
   const fetchFavoritos = async () => {
     if (!user) return;
+
     try {
       const { data } = await axios.get(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/usuarios/${user.id}/terapeutas`
       );
+
       setFavoritos(data);
       localStorage.setItem('favoritos', JSON.stringify(data));
     } catch (err) {
@@ -80,32 +83,47 @@ const PageContent = () => {
     }
   };
 
-  // Favoritar um terapeuta
-  const handleFavoritar = (novoFavorito: Terapeuta) => {
-    const atualizados = [...favoritos, novoFavorito];
+  // ---------------------
+  // Primeira carga
+  // ---------------------
+  useEffect(() => {
+    const terapeutasCache = localStorage.getItem('terapeutas');
+    const favoritosCache = localStorage.getItem('favoritos');
+
+    if (terapeutasCache) setTerapeutas(JSON.parse(terapeutasCache));
+    if (favoritosCache) setFavoritos(JSON.parse(favoritosCache));
+
+    fetchTerapeutas(page);
+    fetchFavoritos();
+  }, []);
+
+  // ----------------------------------
+  // Atualizar ao mudar de página
+  // ----------------------------------
+  useEffect(() => {
+    fetchTerapeutas(page);
+  }, [page]);
+
+  // ----------------------------------
+  // Buscar novamente ao trocar filtro
+  // ----------------------------------
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(1);
+      fetchTerapeutas(1);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [especialidade]);
+
+  const handleFavoritar = (novo: Terapeuta) => {
+    const atualizados = [...favoritos, novo];
     setFavoritos(atualizados);
     localStorage.setItem('favoritos', JSON.stringify(atualizados));
   };
 
-  // Atualiza terapeutas ao filtrar
-  useEffect(() => {
-    if (especialidade) {
-      setLoading(true);
-      const timer = setTimeout(async () => {
-        try {
-          await fetchTerapeutas();
-        } catch (error) {
-        } finally {
-          setLoading(false);
-        }
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [especialidade]);
-
-  const handleIncrement = (direction: boolean) => {
-    if (direction) return setPage((prev) => prev + 1);
-    if (!direction && page > 1) return setPage((prev) => prev - 1);
+  const handlePageChange = (_: any, value: number) => {
+    setPage(value);
   };
 
   return (
@@ -118,6 +136,7 @@ const PageContent = () => {
               <h2>Nossos terapeutas</h2>
               <p>Encontre o profissional ideal para você</p>
             </div>
+
             <input
               className={styles.search}
               type='text'
@@ -125,8 +144,10 @@ const PageContent = () => {
               value={especialidade}
               onChange={(e) => setEspecialidade(e.target.value)}
             />
+
             <div className={styles.card_container}>
               {loading && <Loader />}
+
               {!loading &&
                 terapeutas
                   .filter((t) => t.CRP)
@@ -139,11 +160,17 @@ const PageContent = () => {
                     />
                   ))}
             </div>
-            <div className={styles.paginacao}>
-              <button onClick={() => handleIncrement(true)}>+</button>
-              {page}
-              <button onClick={() => handleIncrement(false)}>-</button>
-            </div>
+
+            {metadata && (
+              <div className={styles.root}>
+                <Pagination
+                  count={metadata.total_pages}
+                  page={page}
+                  onChange={handlePageChange}
+                  color='primary'
+                />
+              </div>
+            )}
           </main>
         </Content>
       </Container>

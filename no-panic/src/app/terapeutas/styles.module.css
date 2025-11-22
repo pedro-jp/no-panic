@@ -55,3 +55,9 @@ div:has(> .loading) {
     border: 1px solid black;
   }
 }
+
+.root {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
