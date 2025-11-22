@@ -1,7 +1,7 @@
 'use client';
 import { Container } from '@/components/ui/container';
 import { Content } from '@/components/ui/content';
-import { Header } from '@/components/ui/header';
+import Header from '@/components/ui/header';
 import React, { useEffect, useState } from 'react';
 import styles from './styles.module.css';
 import { Card } from '@/components/card';
@@ -23,6 +23,8 @@ const PageContent = () => {
   const [especialidade, setEspecialidade] = useState('');
   const [favoritos, setFavoritos] = useState<Terapeuta[]>([]);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [firstLoad, setFirstLoad] = useState(true);
 
   useEffect(() => {
     // carrega terapeutas e favoritos do cache
@@ -34,14 +36,27 @@ const PageContent = () => {
 
     fetchTerapeutas();
     fetchFavoritos();
-  }, []);
+    setFirstLoad(false);
+  }, [page]);
+
+  useEffect(() => {
+    if (!firstLoad) {
+      setLoading(true);
+      try {
+        fetchTerapeutas();
+        fetchFavoritos();
+      } finally {
+        setLoading(false);
+      }
+    }
+  }, [page]);
 
   // Buscar terapeutas
   const fetchTerapeutas = async () => {
     try {
       const url = especialidade
-        ? `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas?especialidade=${especialidade}`
-        : `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas`;
+        ? `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas?especialidade=${especialidade}&page=${page}&limit=9`
+        : `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas?page=${page}&limit=9`;
       const res = await axios.get(url);
       setTerapeutas(res.data.terapeutas);
       localStorage.setItem('terapeutas', JSON.stringify(res.data.terapeutas));
@@ -88,6 +103,11 @@ const PageContent = () => {
     }
   }, [especialidade]);
 
+  const handleIncrement = (direction: boolean) => {
+    if (direction) return setPage((prev) => prev + 1);
+    if (!direction && page > 1) return setPage((prev) => prev - 1);
+  };
+
   return (
     <>
       <Header />
@@ -118,6 +138,11 @@ const PageContent = () => {
                       onFavoritar={() => handleFavoritar(terapeuta)}
                     />
                   ))}
+            </div>
+            <div className={styles.paginacao}>
+              <button onClick={() => handleIncrement(true)}>+</button>
+              {page}
+              <button onClick={() => handleIncrement(false)}>-</button>
             </div>
           </main>
         </Content>

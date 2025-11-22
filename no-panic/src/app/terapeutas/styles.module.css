@@ -3,6 +3,7 @@
   flex-direction: column;
   gap: var(--spacing-md);
   height: fit-content;
+  padding-bottom: 2rem;
 
   width: 100%;
   .header {
@@ -45,4 +46,12 @@
 div:has(> .loading) {
   display: flex !important;
   place-content: center;
+}
+
+.paginacao {
+  margin-inline: auto;
+  button {
+    padding: 1rem;
+    border: 1px solid black;
+  }
 }

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import styles from './styles.module.css';
 import { useRouter } from 'next/navigation';
-import { Header } from '@/components/ui/header';
+import Header from '@/components/ui/header';
 import { Container } from '@/components/ui/container';
 import { Content } from '@/components/ui/content';
 import axios from 'axios';
@@ -91,8 +91,8 @@ const Pacientes = () => {
 
   return (
     <div className={styles.grid}>
-      {pacientes?.map((paciente) => (
-        <div key={paciente.id} className={styles.card}>
+      {pacientes?.map((paciente, index) => (
+        <div key={index} className={styles.card}>
           <div className={styles.cardHeader}>
             <div className={styles.avatar}>
               <span>{paciente.nome.charAt(0).toUpperCase()}</span>
