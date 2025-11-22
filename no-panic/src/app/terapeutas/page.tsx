@@ -33,49 +33,41 @@ const PageContent = () => {
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [metadata, setMetadata] = useState<PageMetadata>();
+  const [firstLoad, setFirstLoad] = useState(true);
 
-  // ---------------------------
-  // Buscar terapeutas paginados
-  // ---------------------------
-  const fetchTerapeutas = async (pageNumber: number) => {
+  useEffect(() => {
+    const terapeutasCache = localStorage.getItem('terapeutas');
+    const favoritosCache = localStorage.getItem('favoritos');
+    if (terapeutasCache) setTerapeutas(JSON.parse(terapeutasCache));
+    if (favoritosCache) setFavoritos(JSON.parse(favoritosCache));
+    fetchTerapeutas();
+    fetchFavoritos();
+    setFirstLoad(false);
+  }, [page]);
+
+  const fetchTerapeutas = async (pageNumber = 1) => {
     try {
-      const baseUrl = `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas`;
-
-      const params = new URLSearchParams({
-        page: String(pageNumber),
-        limit: '9', // fixo como você pediu
-      });
-
-      if (especialidade) {
-        params.append('especialidade', especialidade);
-      }
-
-      const url = `${baseUrl}?${params.toString()}`;
+      const url = especialidade
+        ? `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas?especialidade=${especialidade}&page=${pageNumber}&limit=9`
+        : `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeutas?page=${pageNumber}&limit=9`;
 
       const res = await axios.get(url);
 
       setTerapeutas(res.data.terapeutas);
       setMetadata(res.data.metadata);
 
-      // Mantém localStorage
       localStorage.setItem('terapeutas', JSON.stringify(res.data.terapeutas));
     } catch (err) {
       console.error(err);
-    } finally {
     }
   };
 
-  // ---------------------
-  // Buscar favoritos
-  // ---------------------
   const fetchFavoritos = async () => {
     if (!user) return;
-
     try {
       const { data } = await axios.get(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/usuarios/${user.id}/terapeutas`
       );
-
       setFavoritos(data);
       localStorage.setItem('favoritos', JSON.stringify(data));
     } catch (err) {
@@ -83,34 +75,15 @@ const PageContent = () => {
     }
   };
 
-  // ---------------------
-  // Primeira carga
-  // ---------------------
   useEffect(() => {
-    const terapeutasCache = localStorage.getItem('terapeutas');
-    const favoritosCache = localStorage.getItem('favoritos');
-
-    if (terapeutasCache) setTerapeutas(JSON.parse(terapeutasCache));
-    if (favoritosCache) setFavoritos(JSON.parse(favoritosCache));
-
     fetchTerapeutas(page);
     fetchFavoritos();
-  }, []);
-
-  // ----------------------------------
-  // Atualizar ao mudar de página
-  // ----------------------------------
-  useEffect(() => {
-    fetchTerapeutas(page);
   }, [page]);
 
-  // ----------------------------------
-  // Buscar novamente ao trocar filtro
-  // ----------------------------------
   useEffect(() => {
     const timer = setTimeout(() => {
-      setPage(1);
       fetchTerapeutas(1);
+      setPage(1);
     }, 300);
 
     return () => clearTimeout(timer);
@@ -160,11 +133,10 @@ const PageContent = () => {
                     />
                   ))}
             </div>
-
             {metadata && (
               <div className={styles.root}>
                 <Pagination
-                  count={metadata.total_pages}
+                  count={metadata?.total_pages || 1}
                   page={page}
                   onChange={handlePageChange}
                   color='primary'
