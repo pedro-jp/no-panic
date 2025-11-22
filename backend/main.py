@@ -595,10 +595,7 @@ async def criar_consentimento(request: Request, data: CriarConsentimentoBody):
                 """
                 await cursor.execute(query, (data.usuario_id, data.termo_id))
                 await conn.commit()
-                return {
-                    "mensagem": "Consentimento criado com sucesso!", 
-                    "id": cursor.lastrowid
-                }
+                
             except Exception as e:
                 await conn.rollback()
                 raise HTTPException(status_code=500, detail=f"Erro ao criar consentimento: {str(e)}")
