@@ -138,6 +138,12 @@ class CriarTermoBody(BaseModel):
     titulo: str
     conteudo: str
 
+class CriarTermoBody(BaseModel):
+    tipo: str
+    versao: str
+    titulo: str
+    conteudo: str
+
 # =====================================================
 # ROTAS
 # =====================================================

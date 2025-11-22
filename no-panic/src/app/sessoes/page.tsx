@@ -2,7 +2,7 @@
 
 import { Container } from '@/components/ui/container';
 import { Content } from '@/components/ui/content';
-import { Header } from '@/components/ui/header';
+import Header from '@/components/ui/header';
 import styles from './styles.module.css';
 import React, { useEffect, useState } from 'react';
 import { formatarData, getSessoes } from '@/utils';
@@ -118,7 +118,7 @@ const Page = () => {
                     </div>
                     <div className={styles.cardActions}>
                       <Link
-                        href={`/chamada/${sessao.uuid}/${user?.nome}`}
+                        href={`/sessao/${sessao.uuid}/${user?.nome}`}
                         // onClick={() => handleCall(sessao.id_usuario)}
                         className={styles.btnPrimary}
                       >

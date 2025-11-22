@@ -9,7 +9,7 @@ import { AuthProvider, useAuth } from '@/context/auth-context';
 import { BiLogOut, BiUser, BiUserPlus } from 'react-icons/bi';
 import { getCookie } from 'cookies-next';
 
-export const HeaderComponent = () => {
+const HeaderComponent = () => {
   const { user, logout } = useAuth();
 
   return (
@@ -112,10 +112,12 @@ export const HeaderComponent = () => {
   );
 };
 
-export function Header() {
+function Header() {
   return (
     <AuthProvider>
       <HeaderComponent />
     </AuthProvider>
   );
 }
+
+export default React.memo(Header);
