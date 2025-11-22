@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import styles from './styles.module.css';
 import { useRouter } from 'next/navigation';
-import { Header } from '@/components/ui/header';
+import Header from '@/components/ui/header';
 import { Container } from '@/components/ui/container';
 import { Content } from '@/components/ui/content';
 import axios from 'axios';

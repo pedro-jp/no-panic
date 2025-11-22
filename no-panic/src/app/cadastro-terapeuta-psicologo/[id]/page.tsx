@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
 import { Content } from '@/components/ui/content';
-import { Header } from '@/components/ui/header';
+import Header from '@/components/ui/header';
 import { Input } from '@/components/ui/input-com-label';
 import { AuthProvider, useAuth, User } from '@/context/auth-context';
 // import React, { useState } from 'react';
