@@ -72,7 +72,9 @@ export const Card = ({ terapeuta, favoritos, onFavoritar }: Prop) => {
             <IoStar color='#efb810' />
             4.7
           </span>
-          <span>120 sessões</span>
+          {terapeuta.total_sessoes_concluidas >= 1 && (
+            <span>{terapeuta.total_sessoes_concluidas} sessões</span>
+          )}
         </p>
       </div>
       {jaFavoritado ? (

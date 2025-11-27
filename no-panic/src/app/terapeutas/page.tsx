@@ -16,6 +16,7 @@ export interface Terapeuta {
   especialidade: string;
   CRP: string;
   disponibilidade: string;
+  total_sessoes_concluidas: number;
 }
 
 export interface PageMetadata {
