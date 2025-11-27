@@ -335,13 +335,23 @@ async def listar_terapeutas(
             count_query = "SELECT COUNT(*) AS total FROM usuario u LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario WHERE t.id_usuario IS NOT NULL"
             
             data_query_base = """
-                SELECT 
-                    u.id_usuario, u.nome, u.email, t.especialidade, t.CRP, t.disponibilidade
-                FROM 
-                    usuario u 
-                LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario
-                WHERE t.id_usuario IS NOT NULL
-            """
+            SELECT 
+            u.id_usuario,
+            u.nome,
+            u.email,
+            t.especialidade,
+            t.CRP,
+            t.disponibilidade,
+            (
+                SELECT COUNT(*)
+                FROM sessao s
+                WHERE s.id_terapeuta = u.id_usuario
+                AND s.status = 'concluida'
+            ) AS total_sessoes_concluidas
+            FROM usuario u 
+            LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario
+            WHERE t.id_usuario IS NOT NULL
+            """ 
             
             params = []
             
@@ -362,7 +372,7 @@ async def listar_terapeutas(
                 terapeutas = await cursor.fetchall()
                 
                 total_pages = (total_records + limit - 1) // limit
-                
+                                
                 return {
                     "metadata": {
                         "total_records": total_records,
