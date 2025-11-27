@@ -1,8 +1,6 @@
 CREATE DATABASE  IF NOT EXISTS `no_panic` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
 USE `no_panic`;
 -- MySQL dump 10.13  Distrib 8.0.44, for Linux (x86_64)
---
--- Host: nozomi.proxy.rlwy.net    Database: no_panic
 -- ------------------------------------------------------
 -- Server version	9.4.0
 
