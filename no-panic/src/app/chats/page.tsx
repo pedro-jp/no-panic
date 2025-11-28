@@ -199,7 +199,7 @@ const ChatInterface = () => {
 
             {/* Mensagens */}
             <div className={styles.messagesContainer}>
-              {mensagens && mensagens.length < 1 && 'Conversa vazia'}
+              {mensagens && mensagens.length < 1 && ''}
               {mensagens.map((msg, idx) => {
                 const souEu = (msg.from_id || msg.id_remetente) === MEU_ID;
                 const wrapperClass = souEu
