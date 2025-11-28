@@ -43,7 +43,7 @@ const HeaderComponent = () => {
             <Link href='/sessoes'>Sessões</Link>
           </li>
           <li>
-            <Link href='#'>Chat</Link>
+            <Link href='/chats'>Chats</Link>
           </li>
         </ul>
 
@@ -104,7 +104,7 @@ const HeaderComponent = () => {
             <Link href='/sessoes'>Sessões</Link>
           </li>
           <li>
-            <Link href='#'>Chat</Link>
+            <Link href='/chats'>Chats</Link>
           </li>
         </ul>
       </nav>

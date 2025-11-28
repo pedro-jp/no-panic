@@ -1,11 +1,13 @@
-from fastapi import FastAPI, Request, HTTPException, status
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request, HTTPException, status, WebSocket, WebSocketDisconnect, Query
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, List, Dict
+import json
+from datetime import datetime
 
 import aiomysql
 import bcrypt
@@ -18,16 +20,14 @@ from functools import partial
 load_dotenv()
 
 # --- Configuração do Banco de Dados ---
-DB_HOST = os.getenv("DB_HOST")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_NAME = os.getenv("DB_NAME")
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_USER = os.getenv("DB_USER", "root")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+DB_NAME = os.getenv("DB_NAME", "terapia_db")
 DB_PORT = int(os.getenv("DB_PORT", 3306))
 POOL_SIZE = int(os.getenv("POOL_SIZE", 5))
 
-# --- Utilitários para Criptografia (Non-blocking) ---
-# O bcrypt é CPU-bound. Se rodar direto, trava o servidor async.
-# Esta função joga o processamento pesado para uma thread separada.
+# --- Utilitários Auxiliares ---
 async def run_in_thread(func, *args):
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, partial(func, *args))
@@ -39,10 +39,33 @@ async def hash_password(password: str) -> str:
 async def verify_password(plain_password: str, hashed_password: str) -> bool:
     return await run_in_thread(bcrypt.checkpw, plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 
-# --- Ciclo de Vida da Aplicação (Pool de Conexões) ---
+# --- Gerenciador de WebSockets ---
+class ConnectionManager:
+    def __init__(self):
+        # Mapeia id_usuario -> WebSocket
+        self.active_connections: Dict[int, WebSocket] = {}
+
+    async def connect(self, websocket: WebSocket, user_id: int):
+        await websocket.accept()
+        self.active_connections[user_id] = websocket
+        print(f"Usuário {user_id} conectado no chat.")
+
+    def disconnect(self, user_id: int):
+        if user_id in self.active_connections:
+            del self.active_connections[user_id]
+            print(f"Usuário {user_id} desconectado.")
+
+    async def send_personal_message(self, message: dict, user_id: int):
+        if user_id in self.active_connections:
+            websocket = self.active_connections[user_id]
+            # Envia como JSON para o frontend processar fácil
+            await websocket.send_json(message)
+
+manager = ConnectionManager()
+
+# --- Ciclo de Vida da Aplicação ---
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Inicializa o pool ao ligar o servidor
     app.state.pool = await aiomysql.create_pool(
         host=DB_HOST,
         port=DB_PORT,
@@ -51,31 +74,26 @@ async def lifespan(app: FastAPI):
         db=DB_NAME,
         minsize=1,
         maxsize=POOL_SIZE,
-        autocommit=True # Importante para não precisar dar conn.commit() em tudo
+        autocommit=True
     )
     print(f"✅ Pool de conexões criado: {DB_HOST}:{DB_PORT}")
-    
     yield
-    
-    # Fecha o pool ao desligar
     app.state.pool.close()
     await app.state.pool.wait_closed()
     print("🛑 Pool de conexões encerrado.")
 
-# --- Inicialização do App FastAPI ---
 app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "*"
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 templates = Jinja2Templates(directory="templates")
+
 
 # --- Modelos Pydantic ---
 class CadastroBody(BaseModel):
@@ -135,6 +153,10 @@ class CriarTermoBody(BaseModel):
     tipo: str
     versao: str
     titulo: str
+    conteudo: str
+
+class MensagemEnviada(BaseModel):
+    destinatario_id: int
     conteudo: str
 
 # =====================================================
@@ -419,7 +441,7 @@ async def listar_usuarios_por_terapeuta(request: Request, id_terapeuta: int):
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cursor:
             query = """
-            SELECT u.id_usuario, u.nome, u.email
+            SELECT u.id_usuario AS id, u.nome, u.email
             FROM usuario_salva_terapeuta ust
             JOIN usuario u ON ust.id_usuario = u.id_usuario
             WHERE ust.id_terapeuta = %s
@@ -623,6 +645,157 @@ async def criar_termo(request: Request, data: CriarTermoBody):
             except Exception as e:
                 await conn.rollback()
                 raise HTTPException(status_code=500, detail=f"Erro ao criar termo: {str(e)}")
+            
+async def get_or_create_conversation(pool, user_a: int, user_b: int):
+    """
+    Verifica se já existe conversa entre A e B.
+    Como não sabemos quem é terapeuta/paciente só pelos IDs aqui,
+    tentamos buscar nas duas direções ou assumimos uma regra de negócio.
+    Para simplificar, vamos verificar se existe registro.
+    """
+    async with pool.acquire() as conn:
+        async with conn.cursor(aiomysql.DictCursor) as cur:
+            # Tenta encontrar a conversa independentemente da ordem
+            await cur.execute("""
+                SELECT id_conversa FROM conversa 
+                WHERE (id_usuario = %s AND id_terapeuta = %s) 
+                   OR (id_usuario = %s AND id_terapeuta = %s)
+            """, (user_a, user_b, user_b, user_a))
+            result = await cur.fetchone()
+            
+            if result:
+                return result['id_conversa']
+            
+            # Se não existe, cria. 
+            # NOTA: Aqui precisaríamos saber quem é o terapeuta para preencher certo.
+            # Vou assumir que o frontend ou uma verificação prévia define quem é quem.
+            # Por segurança, vamos verificar quem é terapeuta na tabela `terapeuta`.
+            
+            await cur.execute("SELECT id_usuario FROM terapeuta WHERE id_usuario IN (%s, %s)", (user_a, user_b))
+            terapeuta_res = await cur.fetchone()
+            
+            if not terapeuta_res:
+                # Nenhum dos dois é terapeuta (erro de lógica ou chat entre usuários comuns)
+                # Vamos inserir user_a como usuario e user_b como "terapeuta" apenas para criar o registro
+                # ou lançar erro. Vou criar genérico:
+                id_t = user_b
+                id_u = user_a
+            else:
+                id_t = terapeuta_res['id_usuario']
+                id_u = user_a if user_a != id_t else user_b
+            
+            await cur.execute("""
+                INSERT INTO conversa (id_usuario, id_terapeuta) VALUES (%s, %s)
+            """, (id_u, id_t))
+            return cur.lastrowid
+
+async def salvar_mensagem(pool, id_conversa: int, id_remetente: int, conteudo: str):
+    async with pool.acquire() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute("""
+                INSERT INTO mensagem (id_conversa, id_remetente, conteudo) 
+                VALUES (%s, %s, %s)
+            """, (id_conversa, id_remetente, conteudo))
+            # Atualiza o timestamp da conversa para ela subir na lista
+            await cur.execute("UPDATE conversa SET atualizadoEm = NOW() WHERE id_conversa = %s", (id_conversa,))
+
+# =====================================================
+# ROTAS DE CHAT E WEBSOCKET
+# =====================================================
+
+@app.post("/chat/criar/{user_a}/{user_b}")
+async def criar_conversa(user_a: int, user_b: int):
+    pool = app.state.pool
+    id_conversa = await get_or_create_conversation(pool, user_a, user_b)
+    return {"id_conversa": id_conversa}
+
+@app.websocket("/ws/{id_usuario}")
+async def websocket_endpoint(websocket: WebSocket, id_usuario: int):
+    await manager.connect(websocket, id_usuario)
+    try:
+        while True:
+            # Espera receber um JSON do frontend: {"target_id": 123, "message": "Olá"}
+            data = await websocket.receive_json()
+            target_id = int(data.get("target_id"))
+            conteudo = data.get("message")
+            
+            if not target_id or not conteudo:
+                continue
+
+            # 1. Obter ou criar a conversa no banco
+            pool = app.state.pool
+            id_conversa = await get_or_create_conversation(pool, id_usuario, target_id)
+            
+            # 2. Salvar no banco
+            await salvar_mensagem(pool, id_conversa, id_usuario, conteudo)
+            
+            # 3. Preparar payload de envio
+            payload = {
+                "from_id": id_usuario,
+                "message": conteudo,
+                "timestamp": str(datetime.now())
+            }
+            
+            # 4. Enviar para o destinatário (se online)
+            await manager.send_personal_message(payload, target_id)
+            
+            # 5. (Opcional) Confirmar envio para o remetente (ack)
+            # await manager.send_personal_message({"status": "sent", "to": target_id}, id_usuario)
+
+    except WebSocketDisconnect:
+        manager.disconnect(id_usuario)
+    except Exception as e:
+        print(f"Erro no socket: {e}")
+        manager.disconnect(id_usuario)
+
+@app.get("/chat/conversas/{id_usuario}")
+async def listar_conversas(id_usuario: int):
+    """Lista todas as conversas que o usuário possui."""
+    pool = app.state.pool
+    async with pool.acquire() as conn:
+        async with conn.cursor(aiomysql.DictCursor) as cur:
+            # Busca conversas onde o usuário é paciente ou terapeuta
+            # Faz join com usuario para pegar o nome da outra parte
+            await cur.execute("""
+                SELECT 
+                    c.id_conversa,
+                    CASE 
+                        WHEN c.id_usuario = %s THEN c.id_terapeuta
+                        ELSE c.id_usuario 
+                    END as outro_usuario_id,
+                    u.nome as outro_usuario_nome,
+                    c.atualizadoEm
+                FROM conversa c
+                JOIN usuario u ON u.id_usuario = (CASE WHEN c.id_usuario = %s THEN c.id_terapeuta ELSE c.id_usuario END)
+                WHERE c.id_usuario = %s OR c.id_terapeuta = %s
+                ORDER BY c.atualizadoEm DESC
+            """, (id_usuario, id_usuario, id_usuario, id_usuario))
+            conversas = await cur.fetchall()
+            return conversas
+
+@app.get("/chat/historico/{id_usuario}/{id_outro_usuario}")
+async def pegar_historico(id_usuario: int, id_outro_usuario: int):
+    """Pega o histórico de mensagens entre duas pessoas."""
+    pool = app.state.pool
+    
+    # 1. Achar ID da conversa
+    id_conversa = await get_or_create_conversation(pool, id_usuario, id_outro_usuario)
+    
+    # 2. Buscar mensagens
+    async with pool.acquire() as conn:
+        async with conn.cursor(aiomysql.DictCursor) as cur:
+            await cur.execute("""
+                SELECT id_remetente, conteudo, CONVERT_TZ(enviadoEm, 'UTC', 'America/Sao_Paulo') AS enviadoEm 
+                FROM mensagem 
+                WHERE id_conversa = %s 
+                ORDER BY enviadoEm ASC
+            """, (id_conversa,))
+            mensagens = await cur.fetchall()
+            # Converter datetime para string para evitar erro de JSON
+            for msg in mensagens:
+                msg['enviadoEm'] = msg['enviadoEm'].isoformat()
+            
+            return mensagens
 
 # Para rodar:
 # uvicorn main:app --reload
