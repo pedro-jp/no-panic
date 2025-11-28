@@ -441,7 +441,7 @@ async def listar_usuarios_por_terapeuta(request: Request, id_terapeuta: int):
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cursor:
             query = """
-            SELECT u.id_usuario, u.nome, u.email
+            SELECT u.id_usuario AS id, u.nome, u.email
             FROM usuario_salva_terapeuta ust
             JOIN usuario u ON ust.id_usuario = u.id_usuario
             WHERE ust.id_terapeuta = %s
@@ -702,6 +702,12 @@ async def salvar_mensagem(pool, id_conversa: int, id_remetente: int, conteudo: s
 # =====================================================
 # ROTAS DE CHAT E WEBSOCKET
 # =====================================================
+
+@app.post("/chat/criar/{user_a}/{user_b}")
+async def criar_conversa(user_a: int, user_b: int):
+    pool = app.state.pool
+    id_conversa = await get_or_create_conversation(pool, user_a, user_b)
+    return {"id_conversa": id_conversa}
 
 @app.websocket("/ws/{id_usuario}")
 async def websocket_endpoint(websocket: WebSocket, id_usuario: int):

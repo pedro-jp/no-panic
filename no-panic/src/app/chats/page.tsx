@@ -6,6 +6,8 @@ import Header from '@/components/ui/header';
 import { AuthProvider, useAuth } from '@/context/auth-context'; // Assumindo que você tem isso
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './styles.module.css'; // Importa o CSS Module
+import { useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/router';
 
 // --- Tipos ---
 type Mensagem = {
@@ -39,11 +41,25 @@ const ChatInterface = () => {
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [inputMsg, setInputMsg] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [param_id, setParam_id] = useState<string | null | undefined>(
+    undefined
+  );
 
   // Endpoint do seu backend FastAPI
   const API_BASE_URL = `${process.env.NEXT_PUBLIC_SERVER_URL}`;
   const API_BASE_SOCKET_URL = `${process.env.NEXT_PUBLIC_SOCKET_URL}`;
 
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    setParam_id(searchParams.get('u'));
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!conversas) return;
+    const conversa = conversas.find((a) => a.id_conversa === Number(param_id));
+    setChatSelecionado(conversa!);
+  }, [param_id, conversas]);
   // 1. Carregar lista de conversas ao iniciar
   useEffect(() => {
     if (!user) return;
@@ -154,12 +170,11 @@ const ChatInterface = () => {
               <div className={styles.conversationName}>
                 {c.outro_usuario_nome}
               </div>
-              <div className={styles.conversationHint}>Clique para abrir</div>
+              <div className={styles.conversationHint}></div>
             </li>
           ))}
         </ul>
       </div>
-
       {/* Área do Chat */}
       <div className={styles.chatArea}>
         {chatSelecionado ? (
