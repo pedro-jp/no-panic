@@ -101,6 +101,7 @@ const ChatInterface = () => {
 
   // 3. Carregar histórico ao selecionar um chat
   useEffect(() => {
+    setMensagens([]);
     if (chatSelecionado) {
       fetch(
         `${API_BASE_URL}/chat/historico/${MEU_ID}/${chatSelecionado.outro_usuario_id}`
@@ -167,10 +168,14 @@ const ChatInterface = () => {
                   : ''
               }`}
             >
-              <div className={styles.conversationName}>
-                {c.outro_usuario_nome}
+              <div className={styles.info}>
+                <div className={styles.avatar}>
+                  <span>{c.outro_usuario_nome.charAt(0).toUpperCase()}</span>
+                </div>
+                <div className={styles.conversationName}>
+                  {c.outro_usuario_nome}
+                </div>
               </div>
-              <div className={styles.conversationHint}></div>
             </li>
           ))}
         </ul>
@@ -182,15 +187,19 @@ const ChatInterface = () => {
             {/* Header do Chat */}
             <div className={styles.chatHeader}>
               <span className={styles.chatTitle}>
+                <div className={styles.avatar}>
+                  <span>
+                    {chatSelecionado.outro_usuario_nome.charAt(0).toUpperCase()}
+                  </span>
+                </div>
                 {chatSelecionado.outro_usuario_nome}
               </span>
-              <span className={styles.onlineStatus}>
-                <span className={styles.statusDot}></span> Online (Socket)
-              </span>
+              <span className={styles.onlineStatus}></span>
             </div>
 
             {/* Mensagens */}
             <div className={styles.messagesContainer}>
+              {mensagens && mensagens.length < 1 && 'Conversa vazia'}
               {mensagens.map((msg, idx) => {
                 const souEu = (msg.from_id || msg.id_remetente) === MEU_ID;
                 const wrapperClass = souEu
