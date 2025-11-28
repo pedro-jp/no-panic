@@ -71,7 +71,7 @@ const ChatInterface = () => {
 
   // 2. Conectar ao WebSocket
   useEffect(() => {
-    const ws = new WebSocket(`ws://${API_BASE_SOCKET_URL}/ws/${MEU_ID}`);
+    const ws = new WebSocket(`${API_BASE_SOCKET_URL}/ws/${MEU_ID}`);
 
     ws.onopen = () => {
       console.log('Conectado ao Chat WS');
