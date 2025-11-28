@@ -8,10 +8,10 @@ import { Container } from '@/components/ui/container';
 import { Content } from '@/components/ui/content';
 import axios from 'axios';
 import { AuthProvider, useAuth } from '@/context/auth-context';
-import { GridLoader } from 'react-spinners';
 import { Loader } from '@/components/loader/loader';
 import { Button } from '@/components/ui/button';
 import { toast } from 'react-toastify';
+import { BiCalendar, BiCalendarEvent, BiTime } from 'react-icons/bi';
 
 interface Terapeuta {
   nome: string;
@@ -24,11 +24,6 @@ interface Terapeuta {
 
 export default function Page() {
   const router = useRouter();
-
-  // const handleRemove = (id: string) => {
-  //   removeFavorite(id)
-  //   setFavoritos(getFavorites())
-  // }
 
   const handleCall = (id: string) => {
     router.push(`/?call=${id}`);
@@ -60,15 +55,23 @@ export default function Page() {
     </>
   );
 }
+
+type StatusType = {
+  status: boolean;
+  id: number | null;
+};
+
 const Favoritos = () => {
   const { user } = useAuth();
   const [favoritos, setFavoritos] = React.useState<Terapeuta[]>([]);
   const [loading, setLoading] = useState(false);
-  const [agendar, setAgendar] = useState(false);
+  const [agendar, setAgendar] = useState<StatusType>({
+    status: false,
+    id: null,
+  });
   const [dataAgendamento, setDataAgendamento] = useState('');
   const [horaAgendamento, setHoraAgendamento] = useState('');
 
-  // Carrega do cache ao montar
   useEffect(() => {
     const favoritosCache = localStorage.getItem('favoritos');
     if (favoritosCache) setFavoritos(JSON.parse(favoritosCache));
@@ -83,7 +86,7 @@ const Favoritos = () => {
         `${process.env.NEXT_PUBLIC_SERVER_URL}/usuarios/${user.id}/terapeutas`
       );
       setFavoritos(data);
-      localStorage.setItem('favoritos', JSON.stringify(data)); // salva no localStorage
+      localStorage.setItem('favoritos', JSON.stringify(data));
     } catch (e) {
       console.error(e);
     }
@@ -109,7 +112,7 @@ const Favoritos = () => {
       toast.success('Sessão agendada com sucesso!');
       setDataAgendamento('');
       setHoraAgendamento('');
-      setAgendar(false);
+      setAgendar({ status: false, id: null });
     } catch (e) {
       console.error(e);
       toast.info('Agende novamente.');
@@ -121,10 +124,63 @@ const Favoritos = () => {
   const handleFavoritar = (novoFavorito: Terapeuta) => {
     const atualizados = [...favoritos, novoFavorito];
     setFavoritos(atualizados);
-    localStorage.setItem('favoritos', JSON.stringify(atualizados)); // salva no localStorage
+    localStorage.setItem('favoritos', JSON.stringify(atualizados));
   };
 
-  if (loading) return <Loader />;
+  function formatarDataAgendamento(
+    dataAgendamento: string,
+    horaAgendamento?: string
+  ) {
+    const horaInvalida =
+      !horaAgendamento ||
+      horaAgendamento.trim() === '' ||
+      horaAgendamento === '00:00' ||
+      horaAgendamento === '00' ||
+      horaAgendamento === '0' ||
+      horaAgendamento === '0:00';
+
+    const agora = new Date();
+    const horaParaUsar = horaInvalida
+      ? `${agora.getHours().toString().padStart(2, '0')}:${agora
+          .getMinutes()
+          .toString()
+          .padStart(2, '0')}`
+      : horaAgendamento;
+
+    const data = new Date(`${dataAgendamento}T${horaParaUsar}`);
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    const dataZerada = new Date(
+      data.getFullYear(),
+      data.getMonth(),
+      data.getDate()
+    );
+
+    const diffDias = Math.floor(
+      (dataZerada.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    const diasSemana = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+
+    if (diffDias === 0)
+      return horaInvalida ? `hoje` : `hoje às ${horaParaUsar}`;
+    if (diffDias === 1)
+      return horaInvalida ? `amanhã` : `amanhã às ${horaParaUsar}`;
+    if (diffDias > 1 && diffDias <= 7) {
+      const diaSemana = diasSemana[data.getDay()];
+      return horaInvalida ? `${diaSemana}` : `${diaSemana} às ${horaParaUsar}`;
+    }
+
+    const dia = data.getDate().toString().padStart(2, '0');
+    const mes = (data.getMonth() + 1).toString().padStart(2, '0');
+    const ano = data.getFullYear();
+
+    return horaInvalida
+      ? `${dia}/${mes}/${ano}`
+      : `${dia}/${mes}/${ano} às ${horaParaUsar}`;
+  }
 
   return (
     <div className={styles.grid}>
@@ -145,30 +201,55 @@ const Favoritos = () => {
             </h3>
             <p className={styles.cardId}>{fav.especialidade}</p>
           </div>
-
+          <span>
+            {(dataAgendamento || horaAgendamento) &&
+              agendar.status &&
+              agendar.id === fav.id_usuario &&
+              formatarDataAgendamento(dataAgendamento, horaAgendamento)}
+          </span>
           <div className={styles.cardActions}>
-            {agendar && (
+            {agendar.status && agendar.id === fav.id_usuario && (
               <div className={styles.agendarInputs}>
-                <input
-                  type='date'
-                  min={new Date().toISOString().split('T')[0]}
-                  value={dataAgendamento}
-                  onChange={(e) => setDataAgendamento(e.target.value)}
-                />
-                <input
-                  type='time'
-                  value={horaAgendamento}
-                  onChange={(e) => setHoraAgendamento(e.target.value)}
-                />
+                <div className={styles.calendar_input}>
+                  <BiCalendar size={30} />
+                  <input
+                    type='date'
+                    min={new Date().toISOString().split('T')[0]}
+                    value={dataAgendamento}
+                    onChange={(e) => setDataAgendamento(e.target.value)}
+                  />
+                </div>
+                <div
+                  style={{ animationTimeline: '1s' }}
+                  className={styles.time_input}
+                >
+                  <BiTime size={30} />
+                  <input
+                    type='time'
+                    value={horaAgendamento}
+                    onChange={(e) => setHoraAgendamento(e.target.value)}
+                  />
+                </div>
               </div>
             )}
 
             <Button
+              style={{
+                border: '1px solid #00000010',
+                boxShadow: 'var(--shadow-sm',
+              }}
+              color='purple'
+              size={5}
+              disabled={
+                agendar.status && agendar.id === fav.id_usuario && loading
+              }
               onClick={() => {
-                if (agendar) {
+                if (agendar.status && agendar.id === fav.id_usuario) {
                   handleAgendar(fav.id_usuario);
                 } else {
-                  setAgendar(true);
+                  setDataAgendamento('');
+                  setHoraAgendamento('');
+                  setAgendar({ status: true, id: fav.id_usuario });
                 }
               }}
               className={styles.btnSecondary}
@@ -186,7 +267,11 @@ const Favoritos = () => {
                 <line x1='8' y1='2' x2='8' y2='6' />
                 <line x1='3' y1='10' x2='21' y2='10' />
               </svg>
-              <span>{agendar ? 'Confirmar' : 'Agendar'}</span>
+              <span>
+                {agendar.status && agendar.id === fav.id_usuario
+                  ? 'Confirmar'
+                  : 'Agendar'}
+              </span>
             </Button>
           </div>
         </div>
