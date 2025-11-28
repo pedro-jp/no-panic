@@ -13,6 +13,7 @@ export function middleware(request: NextRequest) {
     '/pacientes',
     '/chamada',
     '/sessoes',
+    '/chats',
     '/cadastro-terapeuta-psicologo',
   ];
 
@@ -44,6 +45,7 @@ export const config = {
     '/pacientes/:path*',
     '/chamada/:path*',
     '/sessoes/:path*',
+    '/chats/:path*',
     '/cadastro-terapeuta-psicologo/:path*',
   ],
 };
