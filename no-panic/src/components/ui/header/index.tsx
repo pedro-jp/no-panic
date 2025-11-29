@@ -446,9 +446,11 @@ const HeaderComponent = () => {
       {/* 🚀 MENU DE NAVEGAÇÃO MOBILE */}
       <nav>
         <ul className={styles.ul_mobile}>
-          <li>
-            <Link href='/terapeutas'>Terapeutas</Link>
-          </li>
+          {user && !user.terapeuta?.CRP && (
+            <li>
+              <Link href='/terapeutas'>Terapeutas</Link>
+            </li>
+          )}
           {user?.terapeuta?.CRP ? (
             <li>
               <Link href='/pacientes'>Pacientes</Link>
