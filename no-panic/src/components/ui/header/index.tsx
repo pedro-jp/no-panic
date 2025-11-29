@@ -280,11 +280,13 @@ const HeaderComponent = () => {
               onTouchStart={handlePressStart}
               onTouchEnd={handlePressEnd}
               disabled={isSending || !user}
-              style={{
-                transform: isHolding ? 'scale(1.05)' : 'scale(1)',
-                transition: 'transform 0.1s ease-out',
-                userSelect: 'none',
-              }}
+              style={
+                {
+                  // transform: isHolding ? 'scale(1.05)' : 'scale(1)',
+                  // transition: 'transform 0.1s ease-out',
+                  // userSelect: 'none',
+                }
+              }
             >
               <IoHeart color='red' />
               {isSending
