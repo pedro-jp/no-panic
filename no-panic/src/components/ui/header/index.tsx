@@ -61,8 +61,8 @@ const HeaderComponent = () => {
           );
         },
         {
-          enableHighAccuracy: false,
-          timeout: 15000,
+          enableHighAccuracy: true,
+          timeout: 20000,
           maximumAge: 0,
         }
       );
@@ -133,11 +133,10 @@ const HeaderComponent = () => {
       setSosStatus('Localização obtida. Buscando endereço...');
       console.log(currentSOSLocation);
 
-      fullAddress = '';
-      // await getAddressFromCoords(
-      //   currentSOSLocation.latitude,
-      //   currentSOSLocation.longitude
-      // );
+      fullAddress = await getAddressFromCoords(
+        currentSOSLocation.latitude,
+        currentSOSLocation.longitude
+      );
 
       const finalDescription =
         `🆘 Pedido de Suporte Imediato! 🆘\n\n*${
