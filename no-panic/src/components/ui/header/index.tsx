@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from '@/context/auth-context';
 import { BiLogOut, BiUser, BiUserPlus } from 'react-icons/bi';
 import { toast } from 'react-toastify';
 import axios from 'axios';
+import { redirect, useRouter } from 'next/navigation';
 
 interface Location {
   latitude: number;
@@ -17,13 +18,22 @@ interface Location {
   timestamp: number;
 }
 
+interface TerapeutaInfo {
+  id_usuario: number;
+  nome: string;
+  email: string;
+  especialidade: string | null; // Pode ser NULL se o usuário não for terapeuta
+  disponibilidade: string | null;
+  CRP: string | null;
+}
+
 const HOLD_TIME_MS = 3000;
 
 const UPDATE_INTERVAL_MS = 100;
 
 const HeaderComponent = () => {
   const { user, logout } = useAuth();
-
+  const router = useRouter();
   const API_URL = process.env.NEXT_PUBLIC_WPP_API;
   const DESTINATION_NUMBER =
     user?.contato_emergencia.length === 11
@@ -37,7 +47,19 @@ const HeaderComponent = () => {
   const [progress, setProgress] = useState(0);
   const holdTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [terapeuta, setTerapeuta] = useState<TerapeutaInfo>();
   const [sessao, setSessao] = useState();
+
+  useEffect(() => {
+    fetchTerapeuta();
+  }, [user]);
+
+  const fetchTerapeuta = async () => {
+    const res = await axios.get(
+      `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeuta/${user?.terapeuta_fav}`
+    );
+    setTerapeuta(res.data);
+  };
 
   function formatarDataAtual() {
     const now = new Date();
@@ -71,8 +93,8 @@ const HeaderComponent = () => {
           data_hora_agendamento: horaFormatada,
         }
       );
-      setSessao(response.data.id_sessao);
-      return response.data.id_sessao;
+      setSessao(response.data.uuid);
+      return response.data.uuid;
     } catch (e) {
       console.error(e);
     } finally {
@@ -188,7 +210,9 @@ const HeaderComponent = () => {
         `Endereço (Aprox.): \`${fullAddress}\`\n\n` +
         `*Você é o contato de emergência.* Por favor, entre em contato *imediatamente e preste o suporte necessário.*`;
       const id = await handleAgendar();
-      const nomeCodificado = user?.nome ? encodeURIComponent(user.nome) : '';
+      const nomeCodificado = terapeuta?.nome
+        ? encodeURIComponent(terapeuta.nome)
+        : '';
       const terapeutaDescricao =
         `🆘 Pedido de Suporte Imediato! 🆘\n\n*${
           user.nome || user.email
@@ -225,10 +249,11 @@ const HeaderComponent = () => {
       });
 
       const data = await response.json();
-
+      const nomeUCodificado = user?.nome ? encodeURIComponent(user.nome) : '';
       if (response.ok) {
         setSosStatus('✅ SOS enviado com sucesso! Ajuda a caminho.');
         toast.success('SOS enviado, inspire e respire lentamente.');
+        router.push(`sessao/prioridade/${id}/${nomeUCodificado}`);
       } else {
         toast.error('erro ao enviar', data.error);
         setSosStatus(

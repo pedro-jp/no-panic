@@ -425,6 +425,37 @@ async def favoritar_terapeuta(request: Request, data: FavoritarBody):
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Erro ao favoritar terapeuta: {str(e)}")
 
+
+@app.get('/terapeuta/{id_usuario}')
+async def listar_terapeutas_por_usuario(request: Request, id_usuario: int):
+    pool = request.app.state.pool
+    async with pool.acquire() as conn:
+        # Usando DictCursor para obter resultados como dicionário
+        async with conn.cursor(aiomysql.DictCursor) as cursor: 
+            query = """
+            SELECT u.id_usuario, u.nome, u.email, t.especialidade, t.disponibilidade, t.CRP
+            FROM
+            usuario u
+            LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario
+            WHERE u.id_usuario = %s
+            """
+            await cursor.execute(query, (id_usuario,))
+            
+            # 🚨 MUDANÇA AQUI: Usar fetchone()
+            usuario_info = await cursor.fetchone()
+            
+            # 🚨 Tratamento para o caso de o usuário não existir
+            if not usuario_info:
+                raise HTTPException(status_code=404, detail=f"Usuário com ID {id_usuario} não encontrado.")
+            
+            # 🚨 RETORNO CORRIGIDO: Agora usuario_info é um dicionário
+            return {
+                "id_usuario": usuario_info["id_usuario"],
+                "nome": usuario_info["nome"]
+                # Você provavelmente quer retornar todos os dados selecionados,
+                # então poderia retornar: return usuario_info
+            }
+
 @app.get('/usuarios/{id_usuario}/terapeutas')
 async def listar_terapeutas_por_usuario(request: Request, id_usuario: int):
     pool = request.app.state.pool
@@ -503,15 +534,30 @@ async def criar_sessao(request: Request, data: CriarSessaoBody):
     async with pool.acquire() as conn:
         async with conn.cursor() as cursor:
             try:
-                await cursor.execute(query, (data.id_usuario, data.id_terapeuta, data.data_hora_agendamento))
-                if hasattr(cursor, 'lastrowid'):
+               await cursor.execute(query, (data.id_usuario, data.id_terapeuta, data.data_hora_agendamento))
+                
+               if hasattr(cursor, 'lastrowid'):
                     novo_id = cursor.lastrowid
-                else:
-                    # Alternativa se 'lastrowid' não estiver disponível diretamente
+               else:
                     raise NotImplementedError("O driver não suporta lastrowid.")
                 
+                # 🚨 NOVA QUERY PARA BUSCAR O UUID
+               busca_uuid_query = "SELECT BIN_TO_UUID(uuid) as uuid FROM sessao WHERE id_sessao = %s"
+               await cursor.execute(busca_uuid_query, (novo_id,))
+                
+               resultado_uuid = await cursor.fetchone()
+                
+               if resultado_uuid:
+                    novo_uuid_retornado = resultado_uuid[0] # Assumindo fetchone retorna uma tupla
+               else:
+                    novo_uuid_retornado = None
+
                 # 3. Retorna o ID
-                return {"mensagem": "Sessão criada com sucesso!", "id_sessao": novo_id}
+               return {
+                    "mensagem": "Sessão criada com sucesso!", 
+                    "id_sessao": novo_id,
+                    "uuid": novo_uuid_retornado # Retorna o UUID
+                }
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Erro ao criar sessão: {str(e)}")
 
