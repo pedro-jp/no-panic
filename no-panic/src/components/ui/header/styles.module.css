@@ -203,7 +203,7 @@
   }
 }
 
-button {
+.sos_perfil button {
   touch-action: none;
 
   /* Impede a seleção de texto */
