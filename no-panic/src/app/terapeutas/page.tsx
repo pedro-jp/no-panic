@@ -147,7 +147,6 @@ const PageContent = () => {
             )}
           </main>
         </Content>
-        <Footer />
       </Container>
     </>
   );

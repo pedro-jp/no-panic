@@ -303,11 +303,11 @@ export function VideoCall({ sessao, me, outro }: PageProps) {
             <span>Sessão em andamento</span>
           </div>
         </div>
-        <div className={styles.timer}>
+        {/* <div className={styles.timer}>
           {' '}
           <FaClock color='#00c951' />
           <Contador hasCall={onCall} />
-        </div>
+        </div> */}
       </div>
       <div className={styles.videos}>
         <div className={styles.video}>
