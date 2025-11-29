@@ -1,4 +1,5 @@
 .content {
   /* overflow: auto !important; */
-  height: fit-content;
+  height: (fit-content);
+  min-height: calc(100vh - 400px);
 }

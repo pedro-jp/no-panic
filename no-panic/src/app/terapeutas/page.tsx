@@ -9,6 +9,7 @@ import axios from 'axios';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { Loader } from '@/components/loader/loader';
 import Pagination from '@mui/material/Pagination';
+import { Footer } from '@/components/ui/footer';
 
 export interface Terapeuta {
   nome: string;
@@ -146,6 +147,7 @@ const PageContent = () => {
             )}
           </main>
         </Content>
+        <Footer />
       </Container>
     </>
   );
