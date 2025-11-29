@@ -202,3 +202,17 @@
     cursor: pointer;
   }
 }
+
+button {
+  touch-action: none;
+
+  /* Impede a seleção de texto */
+  user-select: none;
+  -webkit-user-select: none; /* Para iOS e Chrome/Android mais antigos */
+
+  /* REMOVE O DESTAQUE AZUL/CINZA DE TOQUE (O EFEITO DE ZOOM/FOCALIZAÇÃO) */
+  -webkit-tap-highlight-color: transparent;
+
+  /* Remove o menu de contexto do toque longo no iOS */
+  -webkit-touch-callout: none;
+}
