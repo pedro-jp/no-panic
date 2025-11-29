@@ -48,6 +48,13 @@
   a {
     all: unset;
     cursor: pointer;
+    touch-action: none;
+
+    /* REMOVE O DESTAQUE AZUL/CINZA DE TOQUE (O EFEITO DE ZOOM/FOCALIZAÇÃO) */
+    -webkit-tap-highlight-color: transparent;
+
+    /* Remove o menu de contexto do toque longo no iOS */
+    -webkit-touch-callout: none;
   }
 
   input {
