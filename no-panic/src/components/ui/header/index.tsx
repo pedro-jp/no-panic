@@ -278,8 +278,9 @@ const HeaderComponent = () => {
               onTouchEnd={handlePressEnd}
               disabled={isSending || !user}
               style={{
-                transform: isHolding ? 'scale(0.95)' : 'scale(1)',
+                transform: isHolding ? 'scale(1.05)' : 'scale(1)',
                 transition: 'transform 0.1s ease-out',
+                userSelect: 'none',
               }}
             >
               <IoHeart color='red' />
