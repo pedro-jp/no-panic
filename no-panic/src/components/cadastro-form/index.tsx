@@ -8,10 +8,10 @@ import { Button } from '../ui/button';
 import { useAuth } from '@/context/auth-context';
 
 export const CadastroForm = () => {
-  const [cpf, setCpf] = useState(''); // armazenará apenas os dígitos
-  const [nome, setNome] = useState<string | null>();
-  const [senha, setSenha] = useState<string | null>();
-  const [email, setEmail] = useState<string | null>();
+  const [cpf, setCpf] = useState('');
+  const [nome, setNome] = useState('');
+  const [senha, setSenha] = useState('');
+  const [email, setEmail] = useState('');
 
   const { isLoading, sign } = useAuth();
 

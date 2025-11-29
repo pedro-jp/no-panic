@@ -104,7 +104,9 @@ const PageContent = () => {
 
   const router = useRouter();
 
-  if (user && user.terapeuta?.CRP) router.push('/pacientes');
+  if (user && user.terapeuta?.CRP) {
+    router.push('/pacientes');
+  }
 
   return (
     <>

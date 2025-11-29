@@ -34,9 +34,9 @@ const UPDATE_INTERVAL_MS = 100;
 const HeaderComponent = () => {
   const { user, logout } = useAuth();
   const router = useRouter();
-  const API_URL = process.env.NEXT_PUBLIC_WPP_API;
+  const API_URL = `${process.env.NEXT_PUBLIC_WPP_API}/send-message`;
   const DESTINATION_NUMBER =
-    user?.contato_emergencia.length === 11
+    user?.contato_emergencia?.length === 11
       ? `55${user?.contato_emergencia}`
       : user?.contato_emergencia;
 
@@ -55,6 +55,7 @@ const HeaderComponent = () => {
   }, [user]);
 
   const fetchTerapeuta = async () => {
+    if (user && !user.terapeuta_fav) return;
     const res = await axios.get(
       `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeuta/${user?.terapeuta_fav}`
     );
@@ -223,42 +224,55 @@ const HeaderComponent = () => {
 
       setSosStatus('Endereço obtido. Enviando SOS para o WhatsApp...');
 
-      const response = await fetch(API_URL!, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          to: DESTINATION_NUMBER,
-          latitude: `${currentSOSLocation.latitude}00`,
-          longitude: `${currentSOSLocation.longitude}00`,
-          description: finalDescricao,
-        }),
-      });
-      const terapeutaResponse = await fetch(API_URL!, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          to: DESTINATION_NUMBER,
-          latitude: `${currentSOSLocation.latitude}00`,
-          longitude: `${currentSOSLocation.longitude}00`,
-          description: terapeutaDescricao,
-        }),
-      });
+      console.log(API_URL!);
 
-      const data = await response.json();
-      const nomeUCodificado = user?.nome ? encodeURIComponent(user.nome) : '';
-      if (response.ok) {
-        setSosStatus('✅ SOS enviado com sucesso! Ajuda a caminho.');
-        toast.success('SOS enviado, inspire e respire lentamente.');
-        router.push(`sessao/prioridade/${id}/${nomeUCodificado}`);
-      } else {
-        toast.error('erro ao enviar', data.error);
-        setSosStatus(
-          `❌ Erro ao enviar SOS: ${data.error || 'Erro desconhecido na API.'}`
-        );
+      try {
+        const response = await fetch(API_URL!, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            to: DESTINATION_NUMBER,
+            latitude: `${currentSOSLocation.latitude}00`,
+            longitude: `${currentSOSLocation.longitude}00`,
+            description: finalDescricao,
+          }),
+        });
+        const data = await response.json();
+        const nomeUCodificado = user?.nome ? encodeURIComponent(user.nome) : '';
+
+        if (response.ok) {
+          setSosStatus('✅ SOS enviado com sucesso! Ajuda a caminho.');
+          toast.success('SOS enviado, inspire e respire lentamente.');
+          router.push(`sessao/prioridade/${id}/${nomeUCodificado}`);
+        } else {
+          toast.error('erro ao enviar', data.error);
+          setSosStatus(
+            `❌ Erro ao enviar SOS: ${
+              data.error || 'Erro desconhecido na API.'
+            }`
+          );
+        }
+      } catch (error) {
+        console.log(error);
+      }
+
+      try {
+        await fetch(API_URL!, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            to: DESTINATION_NUMBER,
+            latitude: `${currentSOSLocation.latitude}00`,
+            longitude: `${currentSOSLocation.longitude}00`,
+            description: terapeutaDescricao,
+          }),
+        });
+      } catch (error) {
+        console.log(error);
       }
     } catch (error: any) {
       console.error('Erro no processo SOS:', error);

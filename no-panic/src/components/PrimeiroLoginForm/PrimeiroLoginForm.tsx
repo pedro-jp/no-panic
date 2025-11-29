@@ -6,6 +6,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input-com-label';
 import { setCookie } from 'cookies-next';
 import { User } from '@/context/auth-context';
+import Image from 'next/image';
 
 interface Address {
   cep: string;
@@ -59,7 +60,10 @@ export const PrimeiroLoginForm = ({ user }: PrimeiroLoginFormProps) => {
   const [complemento, setComplemento] = useState<string>();
   const [numero, setNumero] = useState<string>();
   const [contato_emergencia, setContato_emergencia] = useState(''); // número puro
+  const [whatsapp, setWhatsapp] = useState(''); // número puro
+
   const [telefoneFormatado, setTelefoneFormatado] = useState(''); // string formatada
+  const [telefoneFormatado2, setTelefoneFormatado2] = useState(''); // string formatada
   const hoje = new Date();
   const anoAtual = hoje.getFullYear();
   const anoMinimo = anoAtual - 18; // 18 anos atrás
@@ -93,6 +97,7 @@ export const PrimeiroLoginForm = ({ user }: PrimeiroLoginFormProps) => {
       id: user.id,
       endereco: endereco?.logradouro,
       contato_emergencia: contato_emergencia,
+      whatsapp,
       data_nascimento: data_nascimento,
     };
     try {
@@ -191,9 +196,33 @@ export const PrimeiroLoginForm = ({ user }: PrimeiroLoginFormProps) => {
     setTelefoneFormatado(telefone);
   }
 
+  function formatarTelefone2(valor: string) {
+    const apenasNumeros = valor.replace(/\D/g, '').slice(0, 11); // DDD + 9 dígitos
+    setWhatsapp(apenasNumeros);
+
+    let telefone = apenasNumeros;
+
+    if (apenasNumeros.length > 2) {
+      telefone = `(${apenasNumeros.slice(0, 2)}) ${apenasNumeros.slice(2)}`;
+    }
+
+    if (apenasNumeros.length > 7) {
+      telefone = `(${apenasNumeros.slice(0, 2)}) ${apenasNumeros.slice(
+        2,
+        7
+      )}-${apenasNumeros.slice(7)}`;
+    }
+
+    setTelefoneFormatado2(telefone);
+  }
+
   return (
     <Modal canExit={false}>
       <div className={styles.container}>
+        <div className={styles.modal_header}>
+          <Image src={'/logo.png'} alt='Logo' height={100} width={100} />
+          <h2>Conclua o seu cadastro para continuar</h2>
+        </div>
         <form onSubmit={handleSubmit}>
           <div className={styles.line}>
             <Input
@@ -220,9 +249,17 @@ export const PrimeiroLoginForm = ({ user }: PrimeiroLoginFormProps) => {
               placeholder='00000-000'
             />
             <Input
+              label='Whatsapp'
+              value={telefoneFormatado2}
+              type='text'
+              placeholder='11900000000'
+              onChange={(e) => formatarTelefone2(e.target.value)}
+            />
+            <Input
               label='Whatsapp contato de emergência'
               value={telefoneFormatado}
               type='text'
+              placeholder='11900000000'
               onChange={(e) => formatarTelefone(e.target.value)}
             />
           </div>
