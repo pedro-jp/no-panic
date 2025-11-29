@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from '@/context/auth-context';
 import { Loader } from '@/components/loader/loader';
 import Pagination from '@mui/material/Pagination';
 import { Footer } from '@/components/ui/footer';
+import { useRouter } from 'next/navigation';
 
 export interface Terapeuta {
   nome: string;
@@ -100,6 +101,10 @@ const PageContent = () => {
   const handlePageChange = (_: any, value: number) => {
     setPage(value);
   };
+
+  const router = useRouter();
+
+  if (user && user.terapeuta?.CRP) router.push('/pacientes');
 
   return (
     <>

@@ -340,10 +340,12 @@ const HeaderComponent = () => {
         </Link>
         {/* 🚀 MENU PRINCIPAL (DESKTOP) */}
         <ul>
-          <li>
-            <Link href='/terapeutas'>Terapeutas</Link>
-          </li>
-          {user?.terapeuta?.CRP ? (
+          {user && !user.terapeuta?.CRP && (
+            <li>
+              <Link href='/terapeutas'>Terapeutas</Link>
+            </li>
+          )}
+          {user && user?.terapeuta?.CRP ? (
             <li>
               <Link href='/pacientes'>Pacientes</Link>
             </li>
