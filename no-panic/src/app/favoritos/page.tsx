@@ -257,6 +257,8 @@ const Favoritos = () => {
               style={{
                 border: '1px solid #00000010',
                 boxShadow: 'var(--shadow-sm',
+                backgroundColor: 'var(--primary-color)',
+                color: '#fff',
               }}
               color='purple'
               size={5}
@@ -297,6 +299,7 @@ const Favoritos = () => {
               <button
                 onClick={() => criarChat(user.id, fav.id_usuario)}
                 className={styles.btnSecondary}
+                style={{ boxShadow: 'var(--shadow-sm)' }}
               >
                 <svg
                   width='18'

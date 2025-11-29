@@ -106,6 +106,7 @@ const Pacientes = () => {
       console.error('Erro ao criar conversa:', error);
     }
   };
+  if (user && !user.terapeuta?.CRP) router.push('/favoritos');
 
   if (loading) return <Loader />;
 
@@ -122,7 +123,10 @@ const Pacientes = () => {
             <div className={styles.cardBody}>
               <h3 className={styles.cardTitle}>
                 {paciente.nome.split(' ')[0]}{' '}
-                {paciente.nome.split(' ')[paciente.nome.split(' ').length - 1]}{' '}
+                {paciente.nome.split(' ').length > 1 &&
+                  paciente.nome.split(' ')[
+                    paciente.nome.split(' ').length - 1
+                  ]}{' '}
                 <span>{paciente.cpf}</span>
               </h3>
             </div>

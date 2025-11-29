@@ -141,7 +141,18 @@ const PageContent = () => {
                   count={metadata?.total_pages || 1}
                   page={page}
                   onChange={handlePageChange}
-                  color='primary'
+                  sx={{
+                    '& .MuiPaginationItem-root': {
+                      color: '#204664',
+                    },
+                    '& .Mui-selected': {
+                      backgroundColor: '#204664 !important',
+                      color: '#fff',
+                    },
+                    '& .MuiPaginationItem-root:hover': {
+                      backgroundColor: '#20466430',
+                    },
+                  }}
                 />
               </div>
             )}

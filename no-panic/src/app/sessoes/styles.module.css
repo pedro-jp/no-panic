@@ -1,5 +1,5 @@
 .main {
-  padding: 2rem 0;
+  padding: 3rem 0;
   padding-top: 0rem;
   min-height: calc(100vh - 80px);
 }
@@ -58,7 +58,11 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(
+    135deg,
+    #204664,
+    /* Azul Marinho Escuro (Topo) */ #3e6a90 /* Azul Marinho Médio (Base) */
+  );
   display: flex;
   align-items: center;
   justify-content: center;
@@ -141,7 +145,7 @@
 }
 
 .btnPrimary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--primary-color);
   color: white;
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
 }
@@ -152,12 +156,12 @@
 }
 
 .btnSecondary {
-  background: #ff4f4f5b;
+  background: red;
   color: #000;
 }
 
 .btnSecondary:hover {
-  background: #ff2f2f5b;
+  background: green;
   transform: translateY(-1px);
 }
 
@@ -251,11 +255,11 @@
     cursor: pointer;
 
     &.agendada {
-      background-color: greenyellow;
+      background-color: rgba(0, 128, 60, 0.35);
     }
 
     &.cancelar {
-      background: #ff4f4f5b;
+      background: rgba(179, 58, 58, 0.35);
     }
 
     &:hover {

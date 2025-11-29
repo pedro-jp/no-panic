@@ -22,7 +22,6 @@ const Page = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // carrega do cache
     const sessoesCache = localStorage.getItem('sessoes');
     if (sessoesCache) setSessoes(JSON.parse(sessoesCache));
 
@@ -34,7 +33,7 @@ const Page = () => {
             user?.id
           );
           setSessoes(data);
-          localStorage.setItem('sessoes', JSON.stringify(data)); // salva no cache
+          localStorage.setItem('sessoes', JSON.stringify(data));
         } catch (err) {
           console.error('Erro ao buscar sessões:', err);
         }
@@ -75,7 +74,7 @@ const Page = () => {
       <Container>
         <Content>
           {loading && <Loader />}
-          <main>
+          <main className={styles.main}>
             {!sessoes ||
               (sessoes.length === 0 && (
                 <div className={styles.emptyState}>
@@ -119,7 +118,6 @@ const Page = () => {
                     <div className={styles.cardActions}>
                       <Link
                         href={`/sessao/${sessao.uuid}/${user?.nome}`}
-                        // onClick={() => handleCall(sessao.id_usuario)}
                         className={styles.btnPrimary}
                       >
                         <svg
@@ -191,10 +189,12 @@ const Page = () => {
                         style={{
                           color:
                             sessao?.status === Status.agendada
-                              ? 'blue'
+                              ? 'orange'
                               : sessao?.status === Status.concluida
-                              ? 'green'
-                              : 'orange',
+                              ? 'rgba(0, 128, 60, 0.9)'
+                              : sessao?.status === Status.cancelada
+                              ? '#B33A3A'
+                              : 'gray',
                         }}
                       >
                         {sessao.status}

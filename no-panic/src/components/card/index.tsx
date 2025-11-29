@@ -67,7 +67,7 @@ export const Card = ({ terapeuta, favoritos, onFavoritar }: Prop) => {
           <FiClock />
           {terapeuta.disponibilidade}
         </p>
-        <p className={styles.nota}>
+        {/* <p className={styles.nota}>
           <span>
             <IoStar color='#efb810' />
             4.7
@@ -75,12 +75,16 @@ export const Card = ({ terapeuta, favoritos, onFavoritar }: Prop) => {
           {terapeuta.total_sessoes_concluidas >= 1 && (
             <span>{terapeuta.total_sessoes_concluidas} sessões</span>
           )}
-        </p>
+        </p> */}
       </div>
       {jaFavoritado ? (
         <Button
           onClick={() => toast.info('Já favoritado')}
-          style={{ cursor: 'not-allowed', paddingBlock: '.5rem' }}
+          style={{
+            cursor: 'not-allowed',
+            paddingBlock: '.5rem',
+            backgroundColor: 'var(--primary-color)',
+          }}
         >
           <BiCheck />
         </Button>
@@ -88,7 +92,10 @@ export const Card = ({ terapeuta, favoritos, onFavoritar }: Prop) => {
         <Button
           disabled={loading}
           onClick={favoritarTerapeuta}
-          style={{ paddingBlock: '.5rem' }}
+          style={{
+            paddingBlock: '.5rem',
+            backgroundColor: 'var(--primary-color)',
+          }}
         >
           Favoritar
         </Button>

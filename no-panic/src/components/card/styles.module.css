@@ -11,14 +11,14 @@
   padding: 1.75rem 1.5rem;
   border-radius: 16px;
   border: none;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-sm);
   transition: all 0.3s ease;
   position: relative;
 }
 
 .card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-md);
 }
 
 .card img {
@@ -31,7 +31,11 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(
+    135deg,
+    #204664,
+    /* Azul Marinho Escuro (Topo) */ #3e6a90 /* Azul Marinho Médio (Base) */
+  );
   display: flex;
   align-items: center;
   justify-content: center;
@@ -72,7 +76,11 @@
 .info p.especialidade {
   /* Melhorando o badge de especialidade */
   color: #fff;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  background: linear-gradient(
+    to left,
+    #204664,
+    /* Azul Marinho Escuro (Topo) */ #3e6a90 /* Azul Marinho Médio (Base) */
+  );
   padding: 0.4rem 0.8rem;
   border-radius: 8px;
   max-width: fit-content;
@@ -113,7 +121,7 @@
 
 .card button {
   /* Estilizando botão similar ao de favoritos */
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+
   color: #fff;
   font-size: 0.95rem;
   font-weight: 600;

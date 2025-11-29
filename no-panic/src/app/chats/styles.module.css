@@ -236,7 +236,11 @@ body:has(.chatContainer) > div {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(
+    135deg,
+    #204664,
+    /* Azul Marinho Escuro (Topo) */ #3e6a90 /* Azul Marinho Médio (Base) */
+  );
   display: flex;
   align-items: center;
   justify-content: center;

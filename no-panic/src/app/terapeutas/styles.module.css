@@ -25,10 +25,11 @@
     max-width: 250px;
     margin-left: 1px;
     font-size: var(--size-sm);
+    box-shadow: var(--shadow-sm);
 
     &:focus {
       outline: var(--border);
-      box-shadow: var(--shadow);
+      box-shadow: var(--shadow-md);
     }
 
     &:active {
