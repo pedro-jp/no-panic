@@ -8,6 +8,7 @@ import { IoClose, IoHeart, IoMenu } from 'react-icons/io5';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { BiLogOut, BiUser, BiUserPlus } from 'react-icons/bi';
 import { toast } from 'react-toastify';
+import axios from 'axios';
 
 interface Location {
   latitude: number;
@@ -36,6 +37,47 @@ const HeaderComponent = () => {
   const [progress, setProgress] = useState(0);
   const holdTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [sessao, setSessao] = useState();
+
+  function formatarDataAtual() {
+    const now = new Date();
+
+    // Funções auxiliares para garantir dois dígitos (ex: 5 -> 05)
+    const pad = (num: number) => String(num).padStart(2, '0');
+
+    // Componentes de Data
+    const ano = now.getFullYear();
+    const mes = pad(now.getMonth() + 1); // getMonth() retorna 0-11, então adicionamos 1
+    const dia = pad(now.getDate());
+
+    // Componentes de Hora
+    const hora = pad(now.getHours());
+    const minuto = pad(now.getMinutes());
+    const segundo = pad(now.getSeconds());
+
+    // Constrói a string final
+    return `${ano}-${mes}-${dia} ${hora}:${minuto}:${segundo}`;
+  }
+
+  const horaFormatada = formatarDataAtual();
+
+  const handleAgendar = async () => {
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/sessao`,
+        {
+          id_usuario: user?.id,
+          id_terapeuta: user?.terapeuta_fav,
+          data_hora_agendamento: horaFormatada,
+        }
+      );
+      setSessao(response.data.id_sessao);
+      return response.data.id_sessao;
+    } catch (e) {
+      console.error(e);
+    } finally {
+    }
+  };
 
   const getPreciseLocation = () => {
     return new Promise<Location>((resolve, reject) => {
@@ -138,13 +180,22 @@ const HeaderComponent = () => {
         currentSOSLocation.longitude
       );
 
-      const finalDescription =
+      const finalDescricao =
         `🆘 Pedido de Suporte Imediato! 🆘\n\n*${
           user.nome || user.email
         }* acionou o *SOS* e precisa de *ajuda* agora. \n\n` +
         `Localização:\n\`Lat: ${currentSOSLocation.latitude}, Lon: ${currentSOSLocation.longitude}\`\n\n` +
         `Endereço (Aprox.): \`${fullAddress}\`\n\n` +
         `*Você é o contato de emergência.* Por favor, entre em contato *imediatamente e preste o suporte necessário.*`;
+      const id = await handleAgendar();
+      const nomeCodificado = user?.nome ? encodeURIComponent(user.nome) : '';
+      const terapeutaDescricao =
+        `🆘 Pedido de Suporte Imediato! 🆘\n\n*${
+          user.nome || user.email
+        }* acionou o *SOS* e precisa de *ajuda* agora. \n\n` +
+        `Localização:\n\`Lat: ${currentSOSLocation.latitude}, Lon: ${currentSOSLocation.longitude}\`\n\n` +
+        `Endereço (Aprox.): \`${fullAddress}\`\n\n` +
+        `*Você é o terapeuta de emergência.* Por favor, entre em contato *imediatamente e preste o suporte necessário.*\n\nhttps://no-panic-fecaf.vercel.app/sessao/prioridade/${id}/${nomeCodificado}`;
 
       setSosStatus('Endereço obtido. Enviando SOS para o WhatsApp...');
 
@@ -157,7 +208,19 @@ const HeaderComponent = () => {
           to: DESTINATION_NUMBER,
           latitude: `${currentSOSLocation.latitude}00`,
           longitude: `${currentSOSLocation.longitude}00`,
-          description: finalDescription,
+          description: finalDescricao,
+        }),
+      });
+      const terapeutaResponse = await fetch(API_URL!, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: DESTINATION_NUMBER,
+          latitude: `${currentSOSLocation.latitude}00`,
+          longitude: `${currentSOSLocation.longitude}00`,
+          description: terapeutaDescricao,
         }),
       });
 
@@ -273,32 +336,33 @@ const HeaderComponent = () => {
         </ul>
         {/* === FIM MENU PRINCIPAL === */}
         <div className={styles.sos_perfil}>
-          <div className={styles.sos_container}>
-            <button
-              className={styles.sos_btn}
-              onMouseDown={handlePressStart}
-              onMouseUp={handlePressEnd}
-              onMouseLeave={handlePressEnd}
-              onContextMenu={handleContextMenu}
-              onTouchStart={handlePressStart}
-              onTouchEnd={handlePressEnd}
-              disabled={isSending || !user}
-              style={{
-                transform: isHolding ? 'scale(1.05)' : 'scale(1)',
-                transition: 'transform 0.1s ease-out',
-                userSelect: 'none',
-              }}
-            >
-              <IoHeart color='red' />
-              {isSending
-                ? 'ENVIANDO...'
-                : isHolding
-                ? `SEGURANDO (${3 - Math.floor((progress * 3) / 100)}s)`
-                : 'SOS'}
-            </button>
+          {user && !user?.terapeuta?.CRP && (
+            <div className={styles.sos_container}>
+              <button
+                className={styles.sos_btn}
+                onMouseDown={handlePressStart}
+                onMouseUp={handlePressEnd}
+                onMouseLeave={handlePressEnd}
+                onContextMenu={handleContextMenu}
+                onTouchStart={handlePressStart}
+                onTouchEnd={handlePressEnd}
+                disabled={isSending || !user}
+                style={{
+                  transform: isHolding ? 'scale(1.05)' : 'scale(1)',
+                  transition: 'transform 0.1s ease-out',
+                  userSelect: 'none',
+                }}
+              >
+                <IoHeart color='red' />
+                {isSending
+                  ? 'ENVIANDO...'
+                  : isHolding
+                  ? `SEGURANDO (${3 - Math.floor((progress * 3) / 100)}s)`
+                  : 'SOS'}
+              </button>
 
-            {/* Barra de Progresso Visual */}
-            {/* {isHolding && (
+              {/* Barra de Progresso Visual */}
+              {/* {isHolding && (
               <div
                 className={styles.sos_progress_bar}
                 style={{
@@ -313,7 +377,8 @@ const HeaderComponent = () => {
                 }}
               />
             )} */}
-          </div>
+            </div>
+          )}
 
           {/* Exibe o status de envio */}
           {/* {sosStatus && <p className={styles.sos_status}>{sosStatus}</p>} */}

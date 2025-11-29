@@ -13,6 +13,7 @@ export interface User {
   terapeuta: Terapeuta;
   primeiro_login: boolean;
   contato_emergencia: string;
+  terapeuta_fav?: number;
 }
 
 interface AuthContextType {

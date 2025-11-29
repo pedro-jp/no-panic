@@ -209,8 +209,8 @@ async def login(request: Request, data: LoginBody):
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cursor:
             query = """
-                SELECT u.id_usuario, u.nome, u.email, u.cpf, u.primeiro_login, u.senha, u.contato_emergencia,
-                       t.especialidade, t.CRP, t.disponibilidade
+                SELECT u.id_usuario, u.nome, u.email, u.cpf, u.primeiro_login, u.senha, u.contato_emergencia, u.terapeuta_fav,
+                t.especialidade, t.CRP, t.disponibilidade
                 FROM usuario u
                 LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario
                 WHERE u.email = %s
@@ -230,6 +230,7 @@ async def login(request: Request, data: LoginBody):
                     "cpf": usuario["cpf"],
                     "primeiro_login": usuario["primeiro_login"],
                     "contato_emergencia": usuario["contato_emergencia"],
+                    "terapeuta_fav": usuario["terapeuta_fav"],
                     "terapeuta": None
                 }
 
@@ -271,7 +272,7 @@ async def load_user(request: Request, data: EmailBody):
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cursor:
             query = """
-                SELECT u.id_usuario, u.nome, u.email, u.cpf, u.primeiro_login, u.contato_emergencia,
+                SELECT u.id_usuario, u.nome, u.email, u.cpf, u.primeiro_login, u.contato_emergencia, u.terapeuta_fav,
                        t.especialidade, t.CRP, t.disponibilidade
                 FROM usuario u
                 LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario
@@ -290,6 +291,7 @@ async def load_user(request: Request, data: EmailBody):
                 "cpf": usuario["cpf"],
                 "primeiro_login": usuario["primeiro_login"],
                 "contato_emergencia": usuario["contato_emergencia"],
+                "terapeuta_fav": usuario["terapeuta_fav"],
                 "terapeuta": None
             }
 
@@ -502,7 +504,14 @@ async def criar_sessao(request: Request, data: CriarSessaoBody):
         async with conn.cursor() as cursor:
             try:
                 await cursor.execute(query, (data.id_usuario, data.id_terapeuta, data.data_hora_agendamento))
-                return {"mensagem": "Sessão criada com sucesso!"}
+                if hasattr(cursor, 'lastrowid'):
+                    novo_id = cursor.lastrowid
+                else:
+                    # Alternativa se 'lastrowid' não estiver disponível diretamente
+                    raise NotImplementedError("O driver não suporta lastrowid.")
+                
+                # 3. Retorna o ID
+                return {"mensagem": "Sessão criada com sucesso!", "id_sessao": novo_id}
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Erro ao criar sessão: {str(e)}")
 
