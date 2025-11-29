@@ -34,7 +34,7 @@ const UPDATE_INTERVAL_MS = 100;
 const HeaderComponent = () => {
   const { user, logout } = useAuth();
   const router = useRouter();
-  const API_URL = `${process.env.NEXT_PUBLIC_WPP_API}/send-message`;
+  const API_URL = `${process.env.NEXT_PUBLIC_WPP_API}/send-location`;
   const DESTINATION_NUMBER =
     user?.contato_emergencia?.length === 11
       ? `55${user?.contato_emergencia}`
@@ -56,6 +56,7 @@ const HeaderComponent = () => {
 
   const fetchTerapeuta = async () => {
     if (user && !user.terapeuta_fav) return;
+
     const res = await axios.get(
       `${process.env.NEXT_PUBLIC_SERVER_URL}/terapeuta/${user?.terapeuta_fav}`
     );
