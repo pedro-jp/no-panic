@@ -181,7 +181,9 @@ const HeaderComponent = () => {
   };
 
   const startHold = (e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault();
+    if (e.cancelable && e.type !== 'touchstart') {
+      e.preventDefault();
+    }
 
     if (isSending || !user) return;
 
