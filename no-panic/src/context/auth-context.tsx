@@ -12,6 +12,7 @@ export interface User {
   cpf: string;
   terapeuta: Terapeuta;
   primeiro_login: boolean;
+  contato_emergencia: string;
 }
 
 interface AuthContextType {

@@ -1,43 +1,48 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import styles from './styles.module.css';
 import Image from 'next/image';
 import Link from 'next/link';
 import { IoClose, IoHeart, IoMenu } from 'react-icons/io5';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { BiLogOut, BiUser, BiUserPlus } from 'react-icons/bi';
-import { getCookie } from 'cookies-next';
 
 interface Location {
   latitude: number;
   longitude: number;
   accuracy: number;
+  timestamp: number;
 }
+
+const HOLD_TIME_MS = 3000;
+
+const UPDATE_INTERVAL_MS = 100;
 
 const HeaderComponent = () => {
   const { user, logout } = useAuth();
 
-  // URL do seu endpoint de envio de localização
-  const API_URL = 'https://776370d2b564.ngrok-free.app/send-location';
-  // Número de destino, você deve obter este número de alguma forma
-  // Como é um SOS, pode ser um número de emergência ou de um terapeuta específico.
-  const DESTINATION_NUMBER = '5511910613131'; // Substitua pelo número real
+  const API_URL = process.env.NEXT_PUBLIC_WPP_API;
+  const DESTINATION_NUMBER =
+    user?.contato_emergencia.length === 11
+      ? `55${user?.contato_emergencia}`
+      : user?.contato_emergencia;
 
   const [sosStatus, setSosStatus] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
 
-  // 1. Função principal de Geolocation
+  const [isHolding, setIsHolding] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const holdTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const getPreciseLocation = () => {
-    return new Promise((resolve, reject) => {
-      // Verifica se a API de geolocalização está disponível no navegador
+    return new Promise<Location>((resolve, reject) => {
       if (!navigator.geolocation) {
         return reject(
           new Error('A geolocalização não é suportada pelo seu navegador.')
         );
       }
-
-      // Obtém a posição atual com alta precisão
       navigator.geolocation.getCurrentPosition(
         (position) => {
           resolve({
@@ -47,54 +52,110 @@ const HeaderComponent = () => {
             timestamp: position.timestamp,
           });
         },
-        (error) => {
-          // Trata erros como permissão negada (PERMISSION_DENIED)
+        (error: GeolocationPositionError) => {
           reject(
             new Error(
               `Erro ao obter localização (${error.code}): ${error.message}`
             )
           );
         },
-        // Opções para alta precisão
         {
-          enableHighAccuracy: true, // Solicita a melhor precisão possível
-          timeout: 10000, // Tempo máximo de espera (10 segundos)
-          maximumAge: 0, // Não aceita cache, força a leitura de uma nova posição
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
         }
       );
     });
   };
 
-  // 2. Função de Envio
-  const handleSOSClick = async () => {
-    if (isSending) return; // Impede múltiplos cliques
+  const getAddressFromCoords = async (
+    lat: number,
+    lon: number
+  ): Promise<string> => {
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=pt-BR`;
 
-    if (!user) {
-      setSosStatus('Erro: Você precisa estar logado para enviar SOS.');
-      return;
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'NoPanicApp/1.0 (seu_email@exemplo.com)',
+        },
+      });
+      const data = await response.json();
+
+      if (data && data.address) {
+        const address = data.address;
+        const numero = address.house_number || '';
+        const rua =
+          address.road || address.pedestrian || address.street_name || '';
+        const cidade =
+          address.city ||
+          address.town ||
+          address.village ||
+          address.county ||
+          '';
+        const estado = address.state || '';
+
+        let formattedAddress = '';
+
+        if (rua || cidade) {
+          formattedAddress += `${numero} ${rua}`.trim();
+
+          if (cidade) {
+            formattedAddress += `, ${cidade}`;
+          }
+          if (estado) {
+            formattedAddress += ` (${estado})`;
+          }
+
+          return formattedAddress;
+        }
+        return data.display_name;
+      }
+      return `[Endereço não identificado (Coordenadas: ${lat}, ${lon})]`;
+    } catch (e) {
+      console.error('Falha na Geocodificação Reversa (Nominatim):', e);
+      return '[ERRO ao buscar endereço: Problema de rede]';
     }
+  };
+
+  const sendSOSAction = async () => {
+    if (!user || isSending) return;
 
     setIsSending(true);
     setSosStatus('Obtendo localização...');
 
+    let currentSOSLocation: Location;
+    let fullAddress: string = '';
+
     try {
-      const location = (await getPreciseLocation()) as Location;
+      currentSOSLocation = await getPreciseLocation();
+      setSosStatus('Localização obtida. Buscando endereço...');
 
-      setSosStatus('Localização obtida! Enviando para o WhatsApp...');
+      fullAddress = await getAddressFromCoords(
+        currentSOSLocation.latitude,
+        currentSOSLocation.longitude
+      );
 
-      const response = await fetch(API_URL, {
+      const finalDescription =
+        `🆘 Pedido de Suporte Imediato! 🆘\n\n*${
+          user.nome || user.email
+        }* acionou o *SOS* e precisa de *ajuda* agora. \n\n` +
+        `Localização:\n\`Lat: ${currentSOSLocation.latitude}, Lon: ${currentSOSLocation.longitude}\`\n\n` +
+        `Endereço (Aprox.): \`${fullAddress}\`\n\n` +
+        `*Você é o contato de emergência.* Por favor, entre em contato *imediatamente e preste o suporte necessário.*`;
+
+      setSosStatus('Endereço obtido. Enviando SOS para o WhatsApp...');
+
+      const response = await fetch(API_URL!, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           to: DESTINATION_NUMBER,
-          latitude: `${location.latitude}00`,
-          longitude: `${location.longitude}00`,
-          description: `🆘 SOS de ${user.nome || user.email}!
-Latitude: ${location.latitude}, Longitude: ${location.longitude}.
-Precisão: ${location.accuracy} metros.
-Por favor, verifique imediatamente.`,
+          latitude: `${currentSOSLocation.latitude}00`,
+          longitude: `${currentSOSLocation.longitude}00`,
+          description: finalDescription,
         }),
       });
 
@@ -112,24 +173,78 @@ Por favor, verifique imediatamente.`,
       setSosStatus(`❌ Falha crítica: ${error.message}`);
     } finally {
       setIsSending(false);
-      // Limpa a mensagem de status após alguns segundos
       setTimeout(() => setSosStatus(null), 10000);
     }
   };
+
+  const startHold = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+
+    if (isSending || !user) return;
+
+    setIsHolding(true);
+    setProgress(0);
+    setSosStatus('⚠️ Mantenha pressionado por 3s para enviar SOS...');
+
+    let startTime = Date.now();
+
+    holdTimeoutRef.current = setTimeout(() => {
+      cancelHold(false);
+      sendSOSAction();
+    }, HOLD_TIME_MS);
+
+    intervalRef.current = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const calculatedProgress = Math.min(100, (elapsed / HOLD_TIME_MS) * 100);
+      setProgress(calculatedProgress);
+
+      if (calculatedProgress >= 100) {
+        clearInterval(intervalRef.current!);
+      }
+    }, UPDATE_INTERVAL_MS);
+  };
+
+  const cancelHold = (resetStatus: boolean = true) => {
+    if (holdTimeoutRef.current) {
+      clearTimeout(holdTimeoutRef.current);
+      holdTimeoutRef.current = null;
+    }
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    setIsHolding(false);
+    setProgress(0);
+    if (resetStatus) {
+      setSosStatus(null);
+    }
+  };
+
+  const handlePressStart = (e: React.MouseEvent | React.TouchEvent) => {
+    startHold(e);
+  };
+
+  const handlePressEnd = () => {
+    cancelHold();
+  };
+
+  const handleContextMenu = (e: React.MouseEvent) => e.preventDefault();
+
   return (
     <header className={styles.header}>
       <menu>
+        {/* === ESTRUTURA ORIGINAL DE NAVEGAÇÃO DESKTOP/MOBILE === */}
         <div className={styles.burger}>
           <input type='checkbox' name='burger' id='burger' />
           <IoMenu className={styles.closed} />
           <IoClose className={styles.open} />
         </div>
-
         <Link href='/' className={styles.logo}>
           <Image src='/logo_azul_sf.png' alt='logo' height={30} width={30} />
           <h4>No Panic</h4>
         </Link>
-
+        {/* 🚀 MENU PRINCIPAL (DESKTOP) */}
         <ul>
           <li>
             <Link href='/terapeutas'>Terapeutas</Link>
@@ -150,19 +265,51 @@ Por favor, verifique imediatamente.`,
             <Link href='/chats'>Chats</Link>
           </li>
         </ul>
-
+        {/* === FIM MENU PRINCIPAL === */}
         <div className={styles.sos_perfil}>
-          <button
-            className={styles.sos_btn}
-            onClick={handleSOSClick} // Adicionando o manipulador de clique
-            disabled={isSending || !user} // Desabilita se estiver enviando ou não logado
-          >
-            <IoHeart color='red' />
-            {isSending ? 'ENVIANDO...' : 'SOS'}
-          </button>
+          <div className={styles.sos_container}>
+            <button
+              className={styles.sos_btn}
+              onMouseDown={handlePressStart}
+              onMouseUp={handlePressEnd}
+              onMouseLeave={handlePressEnd}
+              onContextMenu={handleContextMenu}
+              onTouchStart={handlePressStart}
+              onTouchEnd={handlePressEnd}
+              disabled={isSending || !user}
+              style={{
+                transform: isHolding ? 'scale(0.95)' : 'scale(1)',
+                transition: 'transform 0.1s ease-out',
+              }}
+            >
+              <IoHeart color='red' />
+              {isSending
+                ? 'ENVIANDO...'
+                : isHolding
+                ? `SEGURANDO (${3 - Math.floor((progress * 3) / 100)}s)`
+                : 'SOS'}
+            </button>
+
+            {/* Barra de Progresso Visual */}
+            {/* {isHolding && (
+              <div
+                className={styles.sos_progress_bar}
+                style={{
+                  width: `${progress}%`,
+                  backgroundColor: 'red',
+                  height: '5px',
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  borderRadius: '0 0 4px 4px',
+                  transition: 'none',
+                }}
+              />
+            )} */}
+          </div>
 
           {/* Exibe o status de envio */}
-          {sosStatus && <p className={styles.sos_status}>{sosStatus}</p>}
+          {/* {sosStatus && <p className={styles.sos_status}>{sosStatus}</p>} */}
 
           {user && (
             <div className={styles.config}>
@@ -197,6 +344,7 @@ Por favor, verifique imediatamente.`,
         </div>
       </menu>
 
+      {/* 🚀 MENU DE NAVEGAÇÃO MOBILE */}
       <nav>
         <ul className={styles.ul_mobile}>
           <li>
@@ -219,6 +367,7 @@ Por favor, verifique imediatamente.`,
           </li>
         </ul>
       </nav>
+      {/* === FIM MENU MOBILE === */}
     </header>
   );
 };

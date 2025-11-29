@@ -209,7 +209,7 @@ async def login(request: Request, data: LoginBody):
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cursor:
             query = """
-                SELECT u.id_usuario, u.nome, u.email, u.cpf, u.primeiro_login, u.senha,
+                SELECT u.id_usuario, u.nome, u.email, u.cpf, u.primeiro_login, u.senha, u.contato_emergencia,
                        t.especialidade, t.CRP, t.disponibilidade
                 FROM usuario u
                 LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario
@@ -229,6 +229,7 @@ async def login(request: Request, data: LoginBody):
                     "email": usuario["email"],
                     "cpf": usuario["cpf"],
                     "primeiro_login": usuario["primeiro_login"],
+                    "contato_emergencia": usuario["contato_emergencia"],
                     "terapeuta": None
                 }
 
@@ -270,7 +271,7 @@ async def load_user(request: Request, data: EmailBody):
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cursor:
             query = """
-                SELECT u.id_usuario, u.nome, u.email, u.cpf, u.primeiro_login,
+                SELECT u.id_usuario, u.nome, u.email, u.cpf, u.primeiro_login, u.contato_emergencia,
                        t.especialidade, t.CRP, t.disponibilidade
                 FROM usuario u
                 LEFT JOIN terapeuta t ON u.id_usuario = t.id_usuario
@@ -288,6 +289,7 @@ async def load_user(request: Request, data: EmailBody):
                 "email": usuario["email"],
                 "cpf": usuario["cpf"],
                 "primeiro_login": usuario["primeiro_login"],
+                "contato_emergencia": usuario["contato_emergencia"],
                 "terapeuta": None
             }
 
@@ -297,6 +299,7 @@ async def load_user(request: Request, data: EmailBody):
                     "especialidade": usuario["especialidade"],
                     "disponibilidade": usuario["disponibilidade"]
                 }
+            print(usuario)
             return newUsuario
 
 @app.put('/primeiro-login')
