@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { IoClose, IoHeart, IoMenu } from 'react-icons/io5';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { BiLogOut, BiUser, BiUserPlus } from 'react-icons/bi';
+import { toast } from 'react-toastify';
 
 interface Location {
   latitude: number;
@@ -163,7 +164,9 @@ const HeaderComponent = () => {
 
       if (response.ok) {
         setSosStatus('✅ SOS enviado com sucesso! Ajuda a caminho.');
+        toast.success('SOS enviado, inspire e respire lentamente.');
       } else {
+        toast.error('erro ao enviar', data.error);
         setSosStatus(
           `❌ Erro ao enviar SOS: ${data.error || 'Erro desconhecido na API.'}`
         );
