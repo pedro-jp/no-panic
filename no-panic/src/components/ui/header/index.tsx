@@ -131,6 +131,7 @@ const HeaderComponent = () => {
     try {
       currentSOSLocation = await getPreciseLocation();
       setSosStatus('Localização obtida. Buscando endereço...');
+      console.log(currentSOSLocation);
 
       fullAddress = await getAddressFromCoords(
         currentSOSLocation.latitude,
